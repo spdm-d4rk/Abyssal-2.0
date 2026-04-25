@@ -254,9 +254,35 @@ local GameData = Services.ReplicatedStorage:WaitForChild("GameData")
 local Floor = GameData:WaitForChild("Floor").Value
 local LatestRoom = GameData:WaitForChild("LatestRoom")
 
+local Loading = Library:CreateLoading({
+    Title = "Abysall Hub",
+    Icon = 0,
+    TotalSteps = 4
+})
+ 
+Loading:SetMessage("Initialising...")
+Loading:SetDescription("Waiting for game to load...")
+Loading:SetCurrentStep(1)
+
+task.spawn(function()
+    task.wait(0.5)
+    Loading:ShowSidebarPage(true)
+    Loading.Sidebar:AddLabel("-- Developers --")
+    Loading.Sidebar:AddLabel("<font color='rgb(255, 230, 0)'>bocaj111004</font>")
+    Loading.Sidebar:AddLabel("<font color='rgb(255, 230, 0)'>feargeorge</font>")
+    Loading.Sidebar:AddLabel("<font color='rgb(255, 230, 0)'>thehuntersolo1</font>")
+    Loading.Sidebar:AddLabel("-- Community --")
+    Loading.Sidebar:AddLabel("<font color='rgb(0, 217, 255)'>https://discord.gg/q6pFJRSy9e</font>")
+end)
+
 while not LocalPlayer.Character or not CurrentRooms:FindFirstChildOfClass("Model") do
     task.wait()
 end
+task.wait(1)
+ 
+Loading:SetCurrentStep(2)
+Loading:SetDescription("Loading interface...")
+task.wait(1)
 
 if not RemotesFolder then
     if Services.ReplicatedStorage:FindFirstChild("EntityInfo") then
@@ -310,7 +336,21 @@ Globals.OldFog = Services.Lighting.FogEnd
 for Index, Object in pairs(Services.Lighting:GetChildren()) do
     if Object:IsA("Atmosphere") then
         Object:SetAttribute("Density_Old", Object.Density)
-        table.insert(Globals.FogInstances, Object)
+
+    local Connection = Object:GetPropertyChangedSignal("Density"):Connect(function()
+        if Object.Density ~= 0 then
+            Object:SetAttribute("Density_Old", Object.Density)
+        end
+        if Toggles.RemoveCameraFog.Value then
+            Object.Density = 0
+        end
+    end)
+
+    Object.Destroying:Once(function()
+        Connection:Disconnect()
+    end)
+    table.insert(Connections, Connection)
+    table.insert(Globals.FogInstances, Object)
     end
 end
 
@@ -789,13 +829,14 @@ local Window = Library:CreateWindow({
     Footer = "Abysall Hub - Beta | Doors",
     NotifySide = "Right",
     ShowCustomCursor = false,
-    AutoShow = true,
+    AutoShow = false,
     Center = true,
 	TabPadding = 3,
 	MenuFadeTime = 0,
     CornerRadius = 2,
 })
 
+Abysall.Interface.ApplyInfoTab(Window)
 local Tabs = {
     General = Window:AddTab("General", "house"),
     Exploits = Window:AddTab("Exploits", "shield"),
@@ -1589,6 +1630,12 @@ end)
 Groupboxes.Exploits_Audio = Tabs.Exploits:AddLeftGroupbox("Audio")
 
 Globals.JamMuffle = Services.SoundService:WaitForChild("Main"):FindFirstChild("Jamming") or Instance.new("EqualizerSoundEffect")
+Groupboxes.Exploits_Audio:AddToggle("RemoveFootstepSounds", {
+    Text = "Remove Footstep Sounds",
+    Default = false,
+    Tooltip = "Removes the sounds when walking."
+})
+
 Groupboxes.Exploits_Audio:AddToggle("RemoveJamminMusic", {
     Text = "Remove Jammin Music",
     Default = false,
@@ -1605,7 +1652,7 @@ Toggles.RemoveJamminMusic:OnChanged(function(Value)
     local Jam = Globals.MainUI.Initiator.Main_Game.Health:FindFirstChild("Jam")
     if Jam then
         Jam.Volume = (Value and 0 or 0.45)
-        Globals.JamMuffle.Enabled = not (Value and true or false)
+        Globals.JamMuffle.Enabled = LiveModifiers:FindFirstChild("Jammin") and not (Value and true or false) or false
     end
 end)
 
@@ -1862,7 +1909,8 @@ end)
 
 Toggles.DisableEntityJumpscares:OnChanged(function(Value)
     if not Functions.CheckCompatability({"hookfunction"}) then
-        Globals.MainUI.Initiator.Main_Game.RemoteListener.Jumpscares.Name = (Value and "Jumpscares_Disabled" or "Jumpscares")
+        local Jumpscares = Globals.MainUI.Initiator.Main_Game.RemoteListener:FindFirstChild("Jumpscares") or Globals.MainUI.Initiator.Main_Game.RemoteListener:FindFirstChild("Jumpscares_Disabled")
+        Jumpscares.Name = (Value and "Jumpscares_Disabled" or "Jumpscares")
         for Index, Object in pairs(Objects.JumpscareModules) do
             Object.Name = (Value and Object:GetAttribute("OriginalName") .. "_Disabled" or Object:GetAttribute("OriginalName"))
         end
@@ -2607,7 +2655,7 @@ Groupboxes.Visuals_ESP_Settings:AddToggle("ESPRainbow", {
 
 Groupboxes.Visuals_ESP_Settings:AddToggle("ESPShowDistance", {
     Text = "Show Distance",
-    Default = false,
+    Default = true,
     Tooltip = "Shows how far away your character is from the object."
 })
 
@@ -2754,7 +2802,7 @@ Groupboxes.Visuals_ESP_Settings:AddToggle("ESPArrowsToggle", {
 })
 
 Abysall.ESPLibrary:SetRainbow(false)
-Abysall.ESPLibrary:SetShowDistance(false)
+Abysall.ESPLibrary:SetShowDistance(true)
 Abysall.ESPLibrary:SetFillTransparency(0.75)
 Abysall.ESPLibrary:SetOutlineTransparency(0)
 Abysall.ESPLibrary:SetFadeTime(0.25)
@@ -3307,6 +3355,9 @@ Toggles.RemoveSkeletonDoor:OnChanged(function(Value)
     end
 end)
 
+Loading:SetCurrentStep(3)
+Loading:SetDescription("Loading object handlers...")
+
 local MainHook
 if Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallmethod"}) then
     MainHook = Abysall.Environment.hookmetamethod(game, "__namecall", Abysall.Environment.newcclosure(function(self, ...)
@@ -3345,8 +3396,6 @@ Functions.HandleCharacter = function(NewCharacter)
         "MainHandler",
         "JumpHandler",
         "SlideHandler",
-        "CrouchHandler1",
-        "CrouchHandler2",
         "LibraryCodeHandler1",
         "LibraryCodeHandler2",
         "OxygenConnection",
@@ -3528,6 +3577,12 @@ Functions.HandleCharacter = function(NewCharacter)
         end
     end)
 
+    Connections.FootstepHandler = Character.ChildAdded:Connect(function(Object)
+        if Object:IsA("Sound") and Object.Name == "Sound" and Toggles.RemoveFootstepSounds.Value then
+            Object.Volume = 0
+        end
+    end)
+
     Connections.OxygenConnection = Character:GetAttributeChangedSignal("Oxygen"):Connect(function()
         Globals.OxygenUI_Text.Text = Functions.FormatOxygen(Character:GetAttribute("Oxygen"))
         Globals.OxygenUI.Enabled = (Toggles.NotifyOxygen.Value and Character:GetAttribute("Oxygen") < 100 and true or false)
@@ -3614,27 +3669,6 @@ Functions.HandleCharacter = function(NewCharacter)
             Character:SetAttribute("CanSlide", true)
         end
     end)
-
-    if Main_Game then
-        Connections.CrouchConnection1 = Services.UserInputService.InputBegan:Connect(function(Input)
-            if Input.KeyCode == Enum.KeyCode.C or Input.KeyCode == Enum.KeyCode.LeftShift or Input.KeyCode == Enum.KeyCode.LeftControl then
-                if Functions.IsCrouching() then
-                    task.wait()
-                    if Functions.IsCrouching() then
-                        Main_Game.crouch(false)
-                    end
-                end
-            end
-        end)
-        Connections.CrouchConnection2 = Globals.MainUI.MainFrame.MobileButtons.CrouchButton.MouseButton1Down:Connect(function()
-            if Functions.IsCrouching() then
-                task.wait()
-                if Functions.IsCrouching() then
-                    Main_Game.crouch(false)
-                end
-            end
-        end)
-    end
 
     Connections.InfiniteJumpConnection1 = Services.UserInputService.InputBegan:Connect(function(Input)
         if Input.KeyCode == Enum.KeyCode.Space and Toggles.InfiniteJumps.Value then
@@ -5332,6 +5366,30 @@ Connections.FogHandler = Services.Lighting:GetPropertyChangedSignal("FogEnd"):Co
     end
 end)
 
+Connections.FogHandler2 = Services.Lighting.DescendantAdded:Connect(function(Object)
+    if Object:IsA("Atmosphere") then
+        Object:SetAttribute("Density_Old", Object.Density)
+        if Toggles.RemoveCameraFog.Value then
+            Object.Density = 0
+        end
+
+        local Connection = Object:GetPropertyChangedSignal("Density"):Connect(function()
+            if Object.Density ~= 0 then
+                Object:SetAttribute("Density_Old", Object.Density)
+            end
+            if Toggles.RemoveCameraFog.Value then
+                Object.Density = 0
+            end
+        end)
+
+        Object.Destroying:Once(function()
+            Connection:Disconnect()
+        end)
+        table.insert(Connections, Connection)
+        table.insert(Globals.FogInstances, Object)
+    end
+end)
+
 Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entity)
     if Entities[Entity.Name] then
         local EntityData = Entities[Entity.Name]
@@ -5452,11 +5510,63 @@ end)
 
 Abysall.Interface.ApplySettingsTab(Window)
 Library:OnUnload(function()
-    for Index, Toggle in pairs(Library.Toggles) do
-        Toggle:SetValue(false)
-    end
     for Index, Connection in pairs(Connections) do
         Connection:Disconnect()
+    end
+    for Index, Object in pairs(Objects.Entities) do
+        if Object.Name == "Snare" or Object.Name == "GiggleCeiling" then
+            Object:WaitForChild("Hitbox").CanTouch = true
+        end
+        if Object.Name == "FakeDoor" or Object.Name == "DoorFake" then
+            Object:WaitForChild("Hidden").CanTouch = true
+            if Object:FindFirstChild("Lock") then
+                Object.Lock.UnlockPrompt.Enabled = true
+            end
+        end
+        if Object.Name == "SideroomSpace" then
+            Object:WaitForChild("Collision").CanCollide = false
+            Object:WaitForChild("Collision").CanTouch = true
+        end
+    end
+
+    for Index, Fog in pairs(Globals.FogInstances) do
+        Fog.Density = Fog:GetAttribute("Density_Old")
+    end
+    Services.Lighting.FogEnd = Globals.OldFog
+
+    local Vignette = Globals.MainUI:FindFirstChild("HideVignette") or Globals.MainUI.MainFrame:FindFirstChild("HideVignette")
+    if Vignette then
+        Vignette.Image = "rbxassetid://6100076320"
+    end
+
+    Modules.Screech.Name = "Screech"
+    Modules.Glitch.Name = "Glitch"
+    Modules.Shade.Name = "Shade"
+    Modules.SpiderJumpscare.Name = "SpiderJumpscare"
+    if Modules.A90 then
+        Modules.A90.Name = "A90"
+    end
+    if Modules.Dread then
+        Modules.Dread.Name = "Dread"
+    end
+    if Modules.Void then
+        Modules.Void.Name = "Void"
+    end
+
+    FakeEvents.Screech:Destroy()
+    FakeEvents.Screech_Real.Parent = RemotesFolder
+
+    FakeEvents.Shade:Destroy()
+    FakeEvents.Shade_Real.Parent = RemotesFolder
+
+    if FakeEvents.A90_Real then
+        FakeEvents.A90:Destroy()
+        FakeEvents.A90_Real.Parent = RemotesFolder
+    end
+
+    if FakeEvents.Surge_Real then
+        FakeEvents.Surge:Destroy()
+        FakeEvents.Surge_Real.Parent = RemotesFolder
     end
 
     local OldAmbient = CurrentRooms:FindFirstChild(tostring(LocalPlayer:GetAttribute("CurrentRoom"))):GetAttribute("Ambient")
@@ -5505,4 +5615,9 @@ Library:OnUnload(function()
 end)
 
 task.wait(0.5)
+Loading:SetCurrentStep(4)
+Loading:SetDescription("Ready!")
+
+task.wait(1)
+Loading:Continue()
 Functions.Notify({Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds."})
