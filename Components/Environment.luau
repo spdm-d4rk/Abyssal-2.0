@@ -59,7 +59,6 @@ Environment.PrintResults = function()
 end
 
 local function RunTest(Name, Test, InternalName)
-    print("testing: " .. Name)
     local TimedOut = false
     Tested = Tested + 1
 
