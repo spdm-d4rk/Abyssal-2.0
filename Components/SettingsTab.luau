@@ -23,14 +23,51 @@ return function(Window)
 			Library.ShowCustomCursor = Value
 		end,
 	})
-	MenuGroup:AddDropdown("NotificationSide", {
-		Values = { "Left", "Right" },
-		Default = "Right",
-		Text = "Notification Side",
-		Callback = function(Value)
-			Library:SetNotifySide(Value)
+	MenuGroup:AddToggle("KeepOnTeleport", {
+		Default = false,
+		Text = "Keep On Teleport",
+		Callback = function(value)
+			if value then
+				if queue_on_teleport then
+					queue_on_teleport([==[
+						game.Loaded:Wait()
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/bocaj111004/Abysall/refs/heads/main/Loader.luau"))()
+					]==])
+				end
+			else
+				if clear_teleport_queue then
+					clear_teleport_queue()
+				end
+			end
 		end,
 	})
+
+	MenuGroup:AddDropdown("UILibrary", {
+		Text = "UI Style",
+		Values = {
+			"Obsidian",
+			"Linoria"
+		},
+		Default = 1,
+		Callback = function(Value)
+			if Abysall.Environment.writefile and Abysall.Environment.readfile then
+				if not Abysall.Environment.isfile("Abysall/UserData.json") then
+					local Data = {
+						TotalExecutions = 0,
+						UILibrary = "Obsidian"
+					}
+					Abysall.Environment.writefile("Abysall/UserData.json", Services.HttpService:JSONEncode(Data))
+				end
+
+				local UserData = Abysall.Environment.readfile("Abysall/UserData.json")
+				local Decoded = Services.HttpService:JSONDecode(UserData)
+				Decoded.UILibrary = Value
+
+				Abysall.Environment.writefile("Abysall/UserData.json", Services.HttpService:JSONEncode(Decoded))
+			end
+		end
+	})
+	
 	MenuGroup:AddDropdown("DPIDropdown", {
 		Values = { "50%", "75%", "100%", "125%", "150%", "175%", "200%" },
 		Default = "100%",
