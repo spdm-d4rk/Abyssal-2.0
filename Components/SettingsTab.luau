@@ -44,6 +44,10 @@ return function(Window)
 			if value then
 				if queue_on_teleport then
 					queue_on_teleport([==[
+						task.wait(1)
+						if clear_teleport_queue then
+							clear_teleport_queue()
+						end
 						loadstring(game:HttpGet("https://raw.githubusercontent.com/bocaj111004/Abysall/refs/heads/main/Loader.luau"))()
 					]==])
 				end
