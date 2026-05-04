@@ -4,7 +4,7 @@ return function(Window)
         "[ DOORS ]",
 		"<font color='rgb(0, 255, 0)'>+ Added Guess Library Code</font>",
 		"<font color='rgb(0, 255, 0)'>+ Renamed 'Rooms Auto-Walk' to 'Auto Rooms'</font>",
-        "<font color='rgb(0, 255, 0)'>+ Added Ignore A-60 (Auto Rooms)n</font>",
+        "<font color='rgb(0, 255, 0)'>+ Added Ignore A-60 (Auto Rooms)</font>",
 		"<font color='rgb(0, 255, 0)'>+ Fixed Several Removal Toggles (Screech, A-90 etc)</font>",
 		"<font color='rgb(0, 255, 0)'>+ Fixed Speed Bypass Removing Footstep Sounds</font>",
 		"<font color='rgb(0, 255, 0)'>+ Other Small Changes</font>",
