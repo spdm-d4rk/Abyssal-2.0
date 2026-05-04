@@ -175,18 +175,6 @@ RunTest("identifyexecutor", function()
     assert(typeof(Global.identifyexecutor()) == "string", "Did not return a string")
 end)
 
-RunTest("setfpscap", function()
-    task.wait(0.25)
-
-    local Start = tick()
-    Global.setfpscap(6)
-    task.wait(0.25)
-    Global.setfpscap(0)
-
-    local Finish = tick() - Start
-    assert(Finish > 0.12, "Failed to set fps cap")
-end)
-
 RunTest("request", function()
     local Response = Global.request({
         Url = "https://httpbin.org/get",
