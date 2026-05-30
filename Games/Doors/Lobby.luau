@@ -36,8 +36,8 @@ end
 task.wait(1)
 
 local Window = Library:CreateWindow({
-    Title = "Abysall Hub",
-    Footer = "Abysall Hub - Beta | Doors (Lobby)",
+    Title = (Abysall.UILibrary == "Linoria" and "Abysall Hub - discord.gg/5jwbZcqjVF" or "Abysall Hub"),
+    Footer = "Abysall Hub - discord.gg/5jwbZcqjVF",
     NotifySide = "Right",
     ShowCustomCursor = false,
     AutoShow = true,
