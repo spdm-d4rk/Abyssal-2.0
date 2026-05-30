@@ -1,8 +1,13 @@
 return function(Window)
     local LatestChangelog = {
-        "28/5/2026",
-        "<font color='rgb(0, 255, 0)'>+ Fixed Loading on Volt</font>",
-		"<font color='rgb(0, 255, 0)'>+ Fixed Loading on Potassium (maybe?)</font>",
+        "30/5/2026",
+        "<font color='rgb(0, 255, 0)'>+ Added Third Person Wall Check</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Viewmodel Offset</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Doors Notifictaion Style</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Cringle Presents to Objective ESP</font>",
+		"<font color='rgb(0, 255, 0)'>+ Greatly Improved Auto Interact on Bad Executors (Like Xeno)</font>",
+		"<font color='rgb(0, 255, 0)'>+ Fixed Unloading (Hopefully)</font>",
+		"<font color='rgb(0, 255, 0)'>+ Other Small Improvements</font>",
     }
 
     local function CloneReference(Object)
