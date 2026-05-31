@@ -5288,20 +5288,33 @@ if not Functions.CheckCompatability({"fireproximityprompt"}) then
                 end)
 
                 local Shown = false
-                local Connection = Services.ProximityPromptService.PromptShown:Connect(function(ShownPrompt)
+                local Fired = false
+                
+                local Connection1 = Services.ProximityPromptService.PromptShown:Connect(function(ShownPrompt)
                     if ShownPrompt == Prompt then
                         Shown = true
                     end
                 end)
 
-                local Tries = 0
-                while not Shown and Tries < 10 do
-                    Tries = Tries + 1
+                 local Connection2 = Prompt.Triggered:Connect(function()
+                    Fired = true
+                end)
+
+                local Tries1 = 0
+                while not Shown and Tries1 < 10 do
+                    Tries1 = Tries1 + 1
                     task.wait()
                 end
 
-                Prompt:InputHoldBegin()
-                Prompt:InputHoldEnd()
+                local Tries2 = 0
+                while not Fired and Tries2 < 10 do
+                    Prompt:InputHoldBegin()
+                    Prompt:InputHoldEnd()
+
+                    Tries2 = Tries2 + 1
+                    task.wait()
+                end
+
                 task.wait()
                 Prompt.MaxActivationDistance = OldMaxActivationDistance
                 Prompt.Enabled = OldEnabled
@@ -5312,7 +5325,8 @@ if not Functions.CheckCompatability({"fireproximityprompt"}) then
                 end)
                 PromptCooldown[Prompt] = nil
                 TempPart:Destroy()
-                Connection:Disconnect()
+                Connection1:Disconnect()
+                Connection2:Disconnect()
             end
         end
     end)
