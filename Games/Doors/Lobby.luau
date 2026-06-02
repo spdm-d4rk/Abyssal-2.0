@@ -1,4 +1,4 @@
-local LoadStart = tick() + 0.5
+local LoadStart = tick()
 Abysall.SavePath = "Doors/Lobby"
 
 local Library = Abysall.Interface.Library
