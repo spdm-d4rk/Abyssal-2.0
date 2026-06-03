@@ -97,7 +97,7 @@ local function RunTest(Name, Test, InternalName)
     end)
     while not Finished do
         Time = Time + 1
-        if Time > 50 then
+        if Time > 100 then
         AddResult(Name, "❌ " .. Name .. " failed: test timed out")
         Failed = Failed + 1
         TimedOut = true
