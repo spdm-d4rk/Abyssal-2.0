@@ -18,7 +18,7 @@ if Abysall.Environment.identifyexecutor and Abysall.Environment.request then
         Account = Player.Name,
         Executor = Abysall.Environment.identifyexecutor(),
         Executions = tonumber(Abysall.TotalExecutions),
-        GameName = Services.MarketplaceService:GetProductInfo(game.PlaceId).Name .. " ( .. tostring(game.PlaceId) .. "),
+        GameName = Services.MarketplaceService:GetProductInfo(game.PlaceId).Name .. " (" .. tostring(game.PlaceId) .. ")",
     }
     
     Abysall.Environment.request({
