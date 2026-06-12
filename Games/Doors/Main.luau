@@ -976,7 +976,7 @@ Functions.GetRandomCode = function()
                 return tostring(math.random(0, 9))
             end))
 			Tries = Tries + 1
-        end until not Globals.UsedRandomCodes[NewCode] or Tries > 20
+        end until (not Globals.UsedRandomCodes[NewCode] or Tries > 10)
         
         Globals.UsedRandomCodes[NewCode] = true
         return NewCode
@@ -2380,6 +2380,11 @@ Groupboxes.Floors_Farming:AddButton({
     Text = "Start Knob Farm",
     Tooltip = "Starts farming knobs, click this when you have enough gold.",
     Func = function()
+		if LatestRoom.Value ~= 0 then
+			Functions.Notify({Title = "You must be in Room 0 to use this."})
+			return
+		end
+
         Globals.KnobFarmStarted = true
     end
 })
