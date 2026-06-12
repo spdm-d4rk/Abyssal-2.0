@@ -3273,12 +3273,12 @@ Functions.HandleObject = function(Object)
 
 			for _, DoorPart in DoorParts do
 				local HP = Instance.new("Part", HighlightModel)
-				HP.Transparency = 0.99
+				HP.Transparency = 0.999
 				HP.Size = DoorPart.Size
 				HP.CanCollide = false
 				HP.CFrame = DoorPart.CFrame
 				HP.Name = "HighlightPart"
-				HP.Material = Enum.Material.Air
+				HP.Material = Enum.Material.Glass
 				HP:SetAttribute("ParentRoom", tonumber(Object.Parent.Name))
 				local W = Instance.new("WeldConstraint", HP)
 				W.Part0 = HP W.Part1 = DoorPart W.Enabled = true
@@ -3288,12 +3288,12 @@ Functions.HandleObject = function(Object)
 		else
 			local Root = Object:WaitForChild("Door", 9e9)
 			local HP = Instance.new("Part", Object)
-			HP.Transparency = 0.99
+			HP.Transparency = 0.999
 			HP.Size = Root.Size
 			HP.CanCollide = false
 			HP.CFrame = Root.CFrame
 			HP.Name = "HighlightPart"
-			HP.Material = Enum.Material.Air
+			HP.Material = Enum.Material.Glass
 			HP:SetAttribute("ParentRoom", tonumber(Object.Parent.Name))
 			local W = Instance.new("WeldConstraint", HP)
 			W.Part0 = HP W.Part1 = Root W.Enabled = true
@@ -4156,7 +4156,7 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 	if RusherAliases[EntityData.Alias] then
 		Instance.new("Humanoid", Entity).Name = "HighlightHumanoid"
 		local Root = Entity.PrimaryPart
-		if Root then Root.Transparency = 0.99 Root.Material = Enum.Material.Air end
+		if Root then Root.Transparency = 0.999 Root.Material = Enum.Material.Glass end
 	end
 
 	if Entity.Name == "Lookman" then
