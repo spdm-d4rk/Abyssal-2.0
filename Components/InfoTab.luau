@@ -1,9 +1,16 @@
 return function(Window)
     local LatestChangelog = {
-        "09/6/2026",
-        "<font color='rgb(0, 255, 0)'>+ Auto Interact Ignores Paintings</font>",
-		"<font color='rgb(0, 255, 0)'>+ Rewrote Most of the Internal Script</font>",
-		"As the internal script has had many changes, there may be new bugs, please report them in the discord server if you find any.",
+        "12/6/2026",
+        "<font color='rgb(0, 255, 0)'>+ Added Remove Cutscenes</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Spectate Entity (Auto Hide)</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Spoof Footsteps (Auto Rooms)</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added STX Notification Style</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Auto Complete Dam Seek</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Auto Complete Cringle</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Knob Farm</font>",
+		"<font color='rgb(0, 255, 0)'>+ Improved Auto Interact</font>",
+		"<font color='rgb(0, 255, 0)'>+ Improved Position Spoof</font>",
+		"<font color='rgb(0, 255, 0)'>+ Improved Various Things</font>",
     }
 
     local function CloneReference(Object)
