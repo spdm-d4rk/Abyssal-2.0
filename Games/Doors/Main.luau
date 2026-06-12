@@ -2402,7 +2402,7 @@ end)
 Globals.KnobFarmActive = false
 Globals.KnobFarmStarted = false
 Connections.KnobFarm = Services.RunService.Heartbeat:Connect(function()
-	if LocalPlayer.PlayerGui:FindFirstChild("TopBarUI") then 
+	if LocalPlayer.PlayerGui:FindFirstChild("TopbarUI") then 
 		local GoldCount = LocalPlayer.PlayerGui.TopbarUI.Topbar.StatsTopbarHandler.StatModules.Gold.GoldVal
 		if Toggles.KnobFarm.Value and GoldCount.Value > 0 and Globals.KnobFarmStarted then
 			if not Globals.KnobFarmActive then
