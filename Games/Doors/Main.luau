@@ -976,7 +976,7 @@ Functions.GetRandomCode = function()
                 return tostring(math.random(0, 9))
             end))
 			Tries = Tries + 1
-        end until (not Globals.UsedRandomCodes[NewCode] or Tries > 10)
+        until (not Globals.UsedRandomCodes[NewCode] or Tries > 10)
         
         Globals.UsedRandomCodes[NewCode] = true
         return NewCode
