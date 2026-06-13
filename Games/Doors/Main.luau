@@ -2274,6 +2274,10 @@ Groupboxes.Floors_Completion:AddButton({
 		    end)
 
             while task.wait(0.1) do
+				if CollisionPart.Anchored then
+					continue
+				end
+
                 Character:PivotTo(Pump:GetPivot())
 
                 local Prompt = Pump:FindFirstChild("ValvePrompt", true)
@@ -3701,6 +3705,10 @@ Functions.HandleObject = function(Object)
 		Object:SetAttribute("RequiresLineOfSight_Old", Object.RequiresLineOfSight)
 		Object:SetAttribute("MaxActivationDistance_Old", Object.MaxActivationDistance)
 
+		if Toggles.InstantPrompts.Value    then Object.HoldDuration = 0 end
+		if Toggles.PromptClip.Value        then Object.RequiresLineOfSight = false end
+		Object.MaxActivationDistance = Object:GetAttribute("MaxActivationDistance_Old") * Options.PromptReachSlider.Value
+
 		local LockPromptNames = { UnlockPrompt=true, SkullPrompt=true, LockPrompt=true, ThingToEnable=true, FusesPrompt=true }
 
 		if Functions.CheckCompatability({"fireproximityprompt"}) and Floor ~= "OldHotel" and Floor ~= "Fools" then
@@ -3749,12 +3757,7 @@ Functions.HandleObject = function(Object)
 				FakePrompt.Enabled = Object.Enabled
 			end
 		end
-
 		table.insert(Objects.Prompts, Object)
-		if Toggles.InstantPrompts.Value    then Object.HoldDuration = 0 end
-		if Toggles.PromptClip.Value        then Object.RequiresLineOfSight = false end
-		Object.MaxActivationDistance = Object:GetAttribute("MaxActivationDistance_Old") * Options.PromptReachSlider.Value
-
 	elseif Name == "Padlock" then
 		Connections.PadlockConnection = Services.RunService.Heartbeat:Connect(function()
 			if Object.PrimaryPart then
