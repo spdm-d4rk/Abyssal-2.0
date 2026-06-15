@@ -4012,10 +4012,21 @@ Functions.TriggerPrompt = function(Prompt)
 		and ParentItem:GetAttribute("Durability") >= ParentItem:GetAttribute("DurabilityMax")
 	then return end
 
-	local IsLockPrompt = Prompt.Name == "UnlockPrompt" or Prompt.Name == "SkullPrompt"
+	-- Fix: exclude vine-family objects so lockpicks / auto-interact do not
+	-- attempt to unlock VineGuillotine levers, CuttableVines, or Brambles.
+	local IsVineRelated = Prompt.Parent.Name == "VineGuillotine"
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "VineGuillotine")
+		or Prompt.Parent.Name == "CuttableVines"
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "CuttableVines")
+		or Prompt.Parent.Name == "LiveEntityBramble"
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "LiveEntityBramble")
+
+	local IsLockPrompt = not IsVineRelated and (
+		Prompt.Name == "UnlockPrompt" or Prompt.Name == "SkullPrompt"
 		or (Prompt.Parent:GetAttribute("Locked") == true and Prompt.Name == "ActivateEventPrompt")
 		or (Prompt.Parent.Parent and Prompt.Parent.Parent:GetAttribute("Locked") == true and Prompt.Name == "ActivateEventPrompt")
 		or Prompt.Parent.Name == "Lock1" or Prompt.Parent.Name == "Lock2"
+	)
 
 	if IsLockPrompt then
 		if Options.AutoInteractIgnoreList.Value["Locks"] then return end
@@ -4290,6 +4301,12 @@ LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
 	if Connections.MainHandler then
 		Connections.MainHandler:Disconnect()
 		Connections.MainHandler = nil
+	end
+	-- Fix: detach fly body from the dead character immediately so it does
+	-- not continue to propel the ragdoll or linger during the respawn wait.
+	if Globals.FlyBody then
+		Globals.FlyBody.Velocity = Vector3.zero
+		Globals.FlyBody.Parent  = nil
 	end
 	task.wait(0.5)
 	Functions.HandleCharacter(NewCharacter)
