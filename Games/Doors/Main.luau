@@ -3853,7 +3853,6 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
 	
 	if Tool and Globals.UseAnimation then
 		Globals.UseAnimationBreak:Stop()
@@ -3994,221 +3993,118 @@ if not Functions.FirePrompt then
 	end)
 end
 
-local function IsPromptIgnored(Prompt)
-	if not Prompt or not Prompt.Parent or not Prompt.Enabled then
-		return true
+local AutoInteractBlacklist = {
+	HidePrompt=true, RiftPrompt=true, StarRiftPrompt=true, InteractPrompt=true, ClimbPrompt=true,
+	DonatePrompt=true, DialoguePrompt=true, RevivePrompt=true, EnterPrompt=true, AnimatePrompt=true,
+	ToolEventPrompt=true, Prompt=true, PropPrompt=true
+}
+
+local TriggerDebounce = false
+
+Functions.TriggerPrompt = function(Prompt)
+	if AutoInteractBlacklist[Prompt.Name] then return end
+	if not Prompt or not Prompt.Parent then return end
+	if TriggerDebounce then return end
+
+	local ParentItem = Functions.HasItem(Prompt.Parent.Name)
+	if ParentItem and ParentItem:GetAttribute("Durability") and ParentItem:GetAttribute("DurabilityMax")
+		and ParentItem:GetAttribute("Durability") >= ParentItem:GetAttribute("DurabilityMax")
+	then return end
+
+	local IsLockPrompt = Prompt.Name == "UnlockPrompt" or Prompt.Name == "SkullPrompt"
+		or (Prompt.Parent:GetAttribute("Locked") == true and Prompt.Name == "ActivateEventPrompt")
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent:GetAttribute("Locked") == true and Prompt.Name == "ActivateEventPrompt")
+		or Prompt.Parent.Name == "Lock1" or Prompt.Parent.Name == "Lock2"
+
+	if IsLockPrompt then
+		if Options.AutoInteractIgnoreList.Value["Locks"] then return end
+		local KeyItems = { "Key","KeyBackdoor","KeyElectrical","KeyIron","Lockpick","SkeletonKey","Shears","Multitool" }
+		local HasKey = false
+		for _, K in KeyItems do if Functions.HasItem(K, true) then HasKey = true break end end
+		if not HasKey then return end
 	end
 
-	local IgnoredNames = {
-		HidePrompt = true,
-		RiftPrompt = true,
-		StarRiftPrompt = true,
-		InteractPrompt = true,
-		ClimbPrompt = true,
-		DonatePrompt = true,
-		DialoguePrompt = true,
-		RevivePrompt = true,
-		EnterPrompt = true,
-		AnimatePrompt = true,
-		ToolEventPrompt = true,
-		Prompt = true,
-		PropPrompt = true,
-	}
-
-	if IgnoredNames[Prompt.Name] then
-		return true
-	end
-
-	if Prompt:GetAttribute("AutoInteractIgnore") then
-		return true
-	end
-
-	if Prompt:IsDescendantOf(Drops) and Options.AutoInteractIgnoreList.Value["Dropped Items"] then
-		return true
-	end
-
-	if Prompt.Parent:GetAttribute and Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then
-		return true
-	end
-
-	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then
-		return true
-	end
-
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then
-		return true
-	end
-
-	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["Glitch Fragments"] then
-		return true
-	end
-
-	if Prompt.Parent.Name == "TrackLever" then
-		return true
-	end
-
-	if Prompt.Name == "ActivateEventPrompt" and (Prompt.Parent.Name == "Padlock" or Prompt.Parent.Name == "MinesAnchor") then
-		return true
-	end
-
-	if Prompt.Name == "ActivateEventPrompt" and (
-		Prompt.ActionText == "Close"
-		or Prompt.Parent.Name == "ElevatorBreaker"
-		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "IndustrialGate")
-	) then
-		return true
-	end
-
-	if Prompt.Parent.Parent and (Prompt.Parent.Parent.Name == "DoorFake" or Prompt.Parent.Parent.Name == "FakeDoor") then
-		return true
-	end
-
-	if Prompt.Parent.Name == "KeyObtainFake" then
-		return true
-	end
-
-	return false
-end
-
-local function GetPromptDistance(Prompt)
-	if not Prompt or not Prompt.Parent then
-		return math.huge
-	end
-
-	if Prompt.Parent:IsA("BasePart") then
-		return LocalPlayer:DistanceFromCharacter(Prompt.Parent.Position)
-	elseif Prompt.Parent:IsA("Model") then
-		return LocalPlayer:DistanceFromCharacter(Prompt.Parent:GetPivot().Position)
-	end
-
-	return math.huge
-end
-
-local function IsPromptValid(Prompt)
-	if IsPromptIgnored(Prompt) then
-		return false
-	end
-
-	if Prompt:GetAttribute("ParentRoom")
-		and tonumber(Prompt:GetAttribute("ParentRoom")) ~= tonumber(LocalPlayer:GetAttribute("CurrentRoom"))
-	then
-		return false
-	end
-
-	local Distance = GetPromptDistance(Prompt)
-	if not ((Distance <= Prompt.MaxActivationDistance and Prompt.Enabled) or (Distance <= Prompt.MaxActivationDistance and Prompt.Name == "LongPushPrompt")) then
-		return false
-	end
+	if Prompt.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
+	if Prompt.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Prompt.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
+	
+	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["Glitch Fragments"] then return end
 
 	if (Prompt.Parent.Name == "KeyObtain" and (Functions.HasItem("Key") or Functions.HasItem("KeyBackdoor")))
 		or (Prompt.Parent.Name == "ElectricalKeyObtain" and Functions.HasItem("KeyElectrical"))
-	then
-		return false
-	end
+	then return end
 
-	if (Prompt.Parent.Name == "LibraryHintPaper" or Prompt.Parent.Name == "PickupItem")
-		and (Functions.HasItem("LibraryHintPaper") or Functions.HasItem("LibraryHintPaperHard"))
-	then
-		return false
-	end
-
-	if Prompt.Parent.Name == "AlarmClock" and Functions.HasItem("AlarmClock") then
-		return false
-	end
-
-	if Prompt.Parent.Name == "LeverForGate" and Prompt:GetAttribute("Interactions") then
-		return false
-	end
+	if Prompt:IsDescendantOf(Drops) and Options.AutoInteractIgnoreList.Value["Dropped Items"] then return end
+	if Prompt.Parent.Name == "TrackLever" then return end
+	if Prompt.Name == "ActivateEventPrompt" and (Prompt.ActionText == "Close"
+		or Prompt.Parent.Name == "ElevatorBreaker"
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "IndustrialGate"))
+	then return end
+	if Prompt.Name == "ActivateEventPrompt" and (Prompt.Parent.Name == "Padlock" or Prompt.Parent.Name == "MinesAnchor") then return end
+	if Prompt.Parent.Name == "LeverForGate" and Prompt:GetAttribute("Interactions") then return end
+	if Prompt.Parent.Parent and (Prompt.Parent.Parent.Name == "DoorFake" or Prompt.Parent.Parent.Name == "FakeDoor") then return end
+	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
+	if Prompt:GetAttribute("AutoInteractIgnore") then return end
+	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
-		if Humanoid.Health >= Humanoid.MaxHealth then
-			return false
-		end
-
+		if Humanoid.Health >= Humanoid.MaxHealth then return end
 		local BPack = Functions.HasItem("BandagePack")
-		if BPack and BPack:GetAttribute("Durability") >= BPack:GetAttribute("DurabilityMax") then
-			return false
-		end
+		if BPack and BPack:GetAttribute("Durability") >= BPack:GetAttribute("DurabilityMax") then return end
 	end
 
 	if Prompt.Parent.Name == "Battery" then
 		local Tool = Character:FindFirstChildOfClass("Tool")
-		if not Tool then
-			return false
-		end
-
+		if not Tool then return end
 		local BPack = Functions.HasItem("BatteryPack")
-		if BPack and BPack:GetAttribute("Durability") >= BPack:GetAttribute("DurabilityMax") then
-			return false
-		end
-
-		if not Tool:GetAttribute("LightSource") then
-			return false
-		end
-
-		if Tool:GetAttribute("Durability") and Tool:GetAttribute("DurabilityMax")
-			and Tool:GetAttribute("Durability") > Tool:GetAttribute("DurabilityMax")
-		then
-			return false
+		if BPack and BPack:GetAttribute("Durability") >= BPack:GetAttribute("DurabilityMax") then return end
+		if Tool:GetAttribute("LightSource") then
+			if Tool:GetAttribute("Durability") and Tool:GetAttribute("DurabilityMax")
+				and Tool:GetAttribute("Durability") > Tool:GetAttribute("DurabilityMax")
+			then return end
+		else
+			return
 		end
 	end
 
 	if Prompt.Name == "HerbPrompt" then
 		local Effects = Globals.MainUI.MainFrame.Healthbar:FindFirstChild("Effects")
-		if Effects and Effects.HerbGreenEffect.Visible then
-			return false
-		end
+		if Effects and Effects.HerbGreenEffect.Visible then return end
 	end
 
-	return true
-end
+	if (Prompt.Parent.Name == "LibraryHintPaper" or Prompt.Parent.Name == "PickupItem") and (Functions.HasItem("LibraryHintPaper") or Functions.HasItem("LibraryHintPaperHard")) then return end
+	if Prompt.Parent.Name == "AlarmClock" and Functions.HasItem("AlarmClock") then return end
+	if Prompt.Parent.Name == "KeyObtainFake" then return end
 
-local function ScorePrompt(Prompt)
-	local Distance = GetPromptDistance(Prompt)
-	local Score = -Distance
-
-	if Prompt.Parent.Name == "KeyObtain" or Prompt.Parent.Name == "ElectricalKeyObtain" then
-		Score += 100
-	elseif Prompt.Parent.Name == "Bandage" or Prompt.Parent.Name == "Battery" then
-		Score += 50
-	elseif Prompt.Name == "UnlockPrompt" or Prompt.Name == "SkullPrompt" then
-		Score += 25
-	end
-
-	return Score
+	Functions.FirePrompt(Prompt)
+	TriggerDebounce = true
+	if Floor == "OldHotel" then task.wait() end
+	TriggerDebounce = false
 end
 
 Globals.LastAutoInteractFire = tick()
 Connections.AutoInteract = Services.RunService.Heartbeat:Connect(function()
 	local Active = Toggles.AutoInteractToggle.Value or Options.AutoInteractKeybind:GetState()
-	if not Active then
-		return
-	end
-
-	if tick() - Globals.LastAutoInteractFire < 1 / 60 then
-		return
-	end
-
-	local BestPrompt = nil
-	local BestScore = -math.huge
+    if not Active then return end
+    if tick() - Globals.LastAutoInteractFire < 1/60 then return end
 
 	for _, Prompt in Objects.Prompts do
-		if IsPromptValid(Prompt) then
-			local Score = ScorePrompt(Prompt)
-			if Score > BestScore then
-				BestScore = Score
-				BestPrompt = Prompt
+        if Prompt:GetAttribute("ParentRoom") and tonumber(Prompt:GetAttribute("ParentRoom")) ~= tonumber(LocalPlayer:GetAttribute("CurrentRoom")) then continue end
+
+		if Prompt.Parent and (Prompt.Parent:IsA("BasePart") or Prompt.Parent:IsA("Model")) then
+			local Distance
+			if Prompt.Parent:IsA("BasePart") then
+				Distance = LocalPlayer:DistanceFromCharacter(Prompt.Parent.Position)
+			else
+				Distance = LocalPlayer:DistanceFromCharacter(Prompt.Parent:GetPivot().Position)
+			end
+			if Distance <= Prompt.MaxActivationDistance and Prompt.Enabled or Distance <= Prompt.MaxActivationDistance and Prompt.Name == "LongPushPrompt" then
+				task.spawn(Functions.TriggerPrompt, Prompt)
 			end
 		end
 	end
-
-	if BestPrompt then
-		Functions.FirePrompt(BestPrompt)
-	end
-
-	Globals.LastAutoInteractFire = tick()
+    Globals.LastAutoInteractFire = tick()
 end)
-
 
 Connections.InfiniteItemsHandler = Services.ProximityPromptService.PromptTriggered:Connect(function(Object)
 	if not Object:GetAttribute("FakePrompt") then return end
@@ -4219,7 +4115,6 @@ Connections.InfiniteItemsHandler = Services.ProximityPromptService.PromptTrigger
 
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
 
 	if Tool and Globals.UseAnimation and Globals.UseAnimationBreak then
 		Globals.UseAnimation:Stop()
