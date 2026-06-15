@@ -3854,7 +3854,7 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 	local Tool
 	for _, N in ToolNames do Tool = Character:FindFirstChild(N) if Tool then break end end
 
-	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Cellar" and not Functions.HasItem("Shears", true) then return end
+	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
 	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
@@ -4029,7 +4029,7 @@ Functions.TriggerPrompt = function(Prompt)
 		if not HasKey then return end
 	end
 
-	if Prompt.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Prompt.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) or Prompt.Parent.Name == "Cellar" and not Functions.HasItem("Shears", true) then return end
+	if Prompt.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Prompt.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
 	if Prompt.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Prompt.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Prompt.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
 	if Functions.HasItem("Shears", true) and Prompt.Parent.Name ~= "CuttableVines" and Prompt.Parent.Name ~= "Chest_Vine" then return end
@@ -4120,7 +4120,7 @@ Connections.InfiniteItemsHandler = Services.ProximityPromptService.PromptTrigger
 	local Tool
 	for _, N in ToolNames do Tool = Character:FindFirstChild(N) if Tool then break end end
 
-	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Cellar" and not Functions.HasItem("Shears", true) then return end
+	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
 	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
