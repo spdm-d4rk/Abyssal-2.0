@@ -6,6 +6,7 @@ return function(Window)
 		"<font color='rgb(0, 255, 0)'>+ Improved Position Spoof (Hotel-, Super Hard Mode)</font>",
 		"<font color='rgb(0, 255, 0)'>+ Added Test Notification Button</font>",
 		"<font color='rgb(0, 255, 0)'>+ Added Door Numbers to ESP</font>",
+		"<font color='rgb(0, 255, 0)'>+ Added Second Velocity Manipulation Method</font>",
 		"<font color='rgb(0, 255, 0)'>+ Other Improvements</font>",
     }
 
