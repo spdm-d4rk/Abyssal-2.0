@@ -3774,9 +3774,22 @@ Functions.HandleObject = function(Object)
 		local LockPromptNames = { UnlockPrompt=true, SkullPrompt=true, LockPrompt=true, ThingToEnable=true, FusesPrompt=true }
 
 		if Functions.CheckCompatability({"fireproximityprompt"}) and Floor ~= "OldHotel" and Floor ~= "Fools" then
-			local IsLockPrompt = LockPromptNames[Object.Name]
+			local IsVineRelated = false
+			local VineNames = { VineGuillotine=true, CuttableVines=true, LiveEntityBramble=true }
+			local VineModel = Object.Parent
+			while VineModel do
+				if VineNames[VineModel.Name] then
+					IsVineRelated = true
+					break
+				end
+				VineModel = VineModel.Parent
+			end
+
+			local IsLockPrompt = not IsVineRelated and (
+				LockPromptNames[Object.Name]
 				or (Object.Parent and Object.Parent:GetAttribute("Locked") == true)
 				or (Object.Parent and Object.Parent.Parent and Object.Parent.Parent.Name == "Locker_Small_Locked" and Object.Name == "ActivateEventPrompt")
+			)
 
 			if IsLockPrompt then
 				local FakePrompt = Object:Clone()
@@ -3853,7 +3866,10 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
+	local IsShearsVineArea2 = Object.Parent.Name == "CuttableVines" or Object.Parent.Name == "Chest_Vine"
+		or (Object.Parent.Parent and Object.Parent.Parent.Name == "VineGuillotine")
+		or Object.Parent.Name == "VineGuillotine"
+	if Functions.HasItem("Shears", true) and not IsShearsVineArea2 then return end
 	
 	if Tool and Globals.UseAnimation then
 		Globals.UseAnimationBreak:Stop()
@@ -4014,12 +4030,16 @@ Functions.TriggerPrompt = function(Prompt)
 
 	-- Fix: exclude vine-family objects so lockpicks / auto-interact do not
 	-- attempt to unlock VineGuillotine levers, CuttableVines, or Brambles.
-	local IsVineRelated = Prompt.Parent.Name == "VineGuillotine"
-		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "VineGuillotine")
-		or Prompt.Parent.Name == "CuttableVines"
-		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "CuttableVines")
-		or Prompt.Parent.Name == "LiveEntityBramble"
-		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "LiveEntityBramble")
+	local IsVineRelated = false
+	local VineNames = { VineGuillotine=true, CuttableVines=true, LiveEntityBramble=true }
+	local VineModel = Prompt.Parent
+	while VineModel do
+		if VineNames[VineModel.Name] then
+			IsVineRelated = true
+			break
+		end
+		VineModel = VineModel.Parent
+	end
 
 	local IsLockPrompt = not IsVineRelated and (
 		Prompt.Name == "UnlockPrompt" or Prompt.Name == "SkullPrompt"
@@ -4038,7 +4058,10 @@ Functions.TriggerPrompt = function(Prompt)
 
 	if Prompt.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Prompt.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Prompt.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Prompt.Parent.Name ~= "CuttableVines" and Prompt.Parent.Name ~= "Chest_Vine" then return end
+	local IsShearsVineArea = Prompt.Parent.Name == "CuttableVines" or Prompt.Parent.Name == "Chest_Vine"
+		or (Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "VineGuillotine")
+		or Prompt.Parent.Name == "VineGuillotine"
+	if Functions.HasItem("Shears", true) and not IsShearsVineArea then return end
 
 	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["Glitch Fragments"] then return end
 
