@@ -3852,7 +3852,6 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 	for _, N in ToolNames do Tool = Character:FindFirstChild(N) if Tool then break end end
 
 	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
-	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
 	
 	if Tool and Globals.UseAnimation then
 		Globals.UseAnimationBreak:Stop()
