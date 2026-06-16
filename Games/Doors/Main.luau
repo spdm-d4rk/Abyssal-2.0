@@ -1257,10 +1257,21 @@ Groupboxes.Lobby:AddToggle("ElevatorSniper", {
         Default = false,
         Tooltip = "Automatically joins the selected player's elevator in the lobby.",
 })
+
+-- Build a live player list for the sniper dropdown
+local function GetPlayerNames()
+        local Names = {}
+        for _, P in Services.Players:GetPlayers() do
+                if P ~= LocalPlayer then table.insert(Names, P.Name) end
+        end
+        return Names
+end
+
+local ElevatorTargetNames = GetPlayerNames()
 Groupboxes.Lobby:AddDropdown("ElevatorSniperTarget", {
-        SpecialType = "Player",
-        Default = 0,
-        Multi = false,
+        Values = #ElevatorTargetNames > 0 and ElevatorTargetNames or { "(no players)" },
+        Default = 1,
+        AllowNull = true,
         Text = "Target Player",
         Compact = true,
 })
@@ -1276,7 +1287,6 @@ local CodesList = {
 Groupboxes.Lobby:AddButton({
         Text = "Redeem all Codes",
         Tooltip = "Fires all currently known active codes for the in-game shop.",
-        DoubleClick = false,
         Func = function()
                 for _, Code in ipairs(CodesList) do
                         if RemotesFolder:FindFirstChild("ShopCode") then
@@ -1342,69 +1352,11 @@ Groupboxes.Lobby:AddButton({
         end,
 })
 
--- Lobby state for SpamBadges + ElevatorSniper connections set up later
+-- Lobby state variables (connections wired up after all UI is built)
 local PreviousBadge = ""
-local SpamBadgeCooldown = false
-local UnlockedBadges = {}  -- populated lazily from PlayerGui achievements
-
-Connections.SpamBadgesConnection = Services.RunService.Heartbeat:Connect(function()
-        if SpamBadgeCooldown then return end
-        SpamBadgeCooldown = true
-        if Toggles.SpamBadges.Value then
-                -- Lazy-populate badge list from achievements UI
-                if #UnlockedBadges == 0 then
-                        local AchUI = LocalPlayer.PlayerGui:FindFirstChild("MainUI")
-                        if AchUI and AchUI:FindFirstChild("LobbyFrame") then
-                                local AchList = AchUI.LobbyFrame:FindFirstChild("Achievements")
-                                if AchList and AchList:FindFirstChild("List") then
-                                        for _, Frame in AchList.List:GetChildren() do
-                                                if Frame:IsA("ImageButton") and Frame.ImageTransparency == 0 then
-                                                        table.insert(UnlockedBadges, Frame.Name)
-                                                end
-                                        end
-                                end
-                        end
-                end
-                if #UnlockedBadges > 0 then
-                        local Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
-                        while Badge == PreviousBadge and #UnlockedBadges > 1 do
-                                Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
-                        end
-                        if RemotesFolder:FindFirstChild("FlexAchievement") then
-                                RemotesFolder.FlexAchievement:FireServer(Badge)
-                        end
-                        PreviousBadge = Badge
-                end
-        end
-        task.wait(Options.SpamBadgesDelay.Value)
-        SpamBadgeCooldown = false
-end)
-
-Connections.ElevatorSniperConnection = Services.RunService.Heartbeat:Connect(function()
-        if not Toggles.ElevatorSniper.Value then return end
-        local TargetName = Options.ElevatorSniperTarget.Value
-        if not TargetName then return end
-        local TargetPlayer = Services.Players:FindFirstChild(tostring(TargetName))
-        if not TargetPlayer or not TargetPlayer.Character then return end
-        local LobbyElevators = Services.Workspace:FindFirstChild("Lobby")
-        if not LobbyElevators then return end
-        local ElevatorFolder = LobbyElevators:FindFirstChild("LobbyElevators")
-        if not ElevatorFolder then return end
-        local TargetFound = false
-        for _, Elevator in ElevatorFolder:GetChildren() do
-                if TargetPlayer.Character:GetAttribute("InGameElevator")
-                        and Elevator:GetAttribute("ID") == TargetPlayer.Character:GetAttribute("InGameElevator")
-                then
-                        TargetFound = true
-                        if RemotesFolder:FindFirstChild("ElevatorJoin") then
-                                RemotesFolder.ElevatorJoin:FireServer(Elevator)
-                        end
-                end
-        end
-        if not TargetFound and RemotesFolder:FindFirstChild("ElevatorExit") then
-                RemotesFolder.ElevatorExit:FireServer()
-        end
-end)
+local UnlockedBadges = {}
+local LastSpamBadgeTick = 0
+local LastElevatorSniperTick = 0
 
 Groupboxes.Self_Misc = Tabs.General:AddRightGroupbox("Miscellaneous")
 Groupboxes.Self_Misc:AddButton({
@@ -4584,6 +4536,85 @@ LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
         end
         task.wait(0.5)
         Functions.HandleCharacter(NewCharacter)
+end)
+
+-- ─────────────────────────────────────────────────────────
+-- LOBBY CONNECTIONS  (Cycle Achievements · Elevator Sniper)
+-- ─────────────────────────────────────────────────────────
+
+Connections.SpamBadgesConnection = Services.RunService.Heartbeat:Connect(function()
+        if not Toggles.SpamBadges.Value then return end
+        if tick() - LastSpamBadgeTick < Options.SpamBadgesDelay.Value then return end
+        LastSpamBadgeTick = tick()
+
+        -- Lazy-build badge list from achievements UI frame (lobby only)
+        if #UnlockedBadges == 0 then
+                local AchUI = LocalPlayer.PlayerGui:FindFirstChild("MainUI") or LocalPlayer.PlayerGui:FindFirstChild("Gui")
+                local LobbyFrame = AchUI and (AchUI:FindFirstChild("LobbyFrame") or AchUI:FindFirstChild("LobbyUI"))
+                local AchList   = LobbyFrame and (LobbyFrame:FindFirstChild("Achievements") or LobbyFrame:FindFirstChild("AchievementsFrame"))
+                local List       = AchList and AchList:FindFirstChild("List")
+                if List then
+                        for _, Frame in List:GetChildren() do
+                                if Frame:IsA("ImageButton") and Frame.ImageTransparency == 0 then
+                                        table.insert(UnlockedBadges, Frame.Name)
+                                end
+                        end
+                end
+        end
+
+        if #UnlockedBadges > 0 and RemotesFolder:FindFirstChild("FlexAchievement") then
+                local Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
+                local Tries = 0
+                while Badge == PreviousBadge and #UnlockedBadges > 1 and Tries < 10 do
+                        Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
+                        Tries += 1
+                end
+                RemotesFolder.FlexAchievement:FireServer(Badge)
+                PreviousBadge = Badge
+        end
+end)
+
+Connections.ElevatorSniperConnection = Services.RunService.Heartbeat:Connect(function()
+        if not Toggles.ElevatorSniper.Value then return end
+        if tick() - LastElevatorSniperTick < 0.5 then return end
+        LastElevatorSniperTick = tick()
+
+        local TargetName = Options.ElevatorSniperTarget.Value
+        if not TargetName or TargetName == "(no players)" then return end
+        local TargetPlayer = Services.Players:FindFirstChild(tostring(TargetName))
+        if not TargetPlayer or not TargetPlayer.Character then return end
+
+        local LobbyFolder = Services.Workspace:FindFirstChild("Lobby")
+        if not LobbyFolder then return end
+        local ElevatorFolder = LobbyFolder:FindFirstChild("LobbyElevators")
+                or LobbyFolder:FindFirstChild("Elevators")
+        if not ElevatorFolder then return end
+
+        local TargetElevId = TargetPlayer.Character:GetAttribute("InGameElevator")
+        if not TargetElevId then return end
+
+        for _, Elevator in ElevatorFolder:GetChildren() do
+                if Elevator:GetAttribute("ID") == TargetElevId then
+                        if RemotesFolder:FindFirstChild("ElevatorJoin") then
+                                RemotesFolder.ElevatorJoin:FireServer(Elevator)
+                        end
+                        break
+                end
+        end
+end)
+
+-- Keep the player list fresh whenever someone joins/leaves
+Services.Players.PlayerAdded:Connect(function()
+        local Names = GetPlayerNames()
+        if Options.ElevatorSniperTarget then
+                Options.ElevatorSniperTarget:SetValues(#Names > 0 and Names or { "(no players)" })
+        end
+end)
+Services.Players.PlayerRemoving:Connect(function()
+        local Names = GetPlayerNames()
+        if Options.ElevatorSniperTarget then
+                Options.ElevatorSniperTarget:SetValues(#Names > 0 and Names or { "(no players)" })
+        end
 end)
 
 -- ─────────────────────────────────────────────────────────
