@@ -225,6 +225,7 @@ local CutsceneNames = {
     "SewerSeekLower",
     "GrumbleNestEnd",
     "EyestalkIntro",
+    "EyestalkOutro"
 }
 
 local Character
@@ -774,7 +775,7 @@ Functions.GetNearestFigure = function()
 	local FigureNames = { FigureRig = true, FigureRagdoll = true, Figure = true }
 
 	for _, Object in Objects.Entities do
-		if Object:IsA("Model") and Object.PrimaryPart and FigureNames[Object.Name] then
+		if Object.PrimaryPart and FigureNames[Object.Name] then
 			local Distance = LocalPlayer:DistanceFromCharacter(Object.PrimaryPart.Position)
 			if Distance < Nearest.Distance and Distance < 25 then
 				Nearest.Distance = Distance
@@ -933,21 +934,6 @@ end
 
 Functions.BlacklistESP = function(Object)
 	table.insert(ESPBlacklist, Object)
-end
-
-Functions.GetDoorNumber = function(Object)
-	local DoorNumber = tonumber(Object.Parent.Name) or tonumber(Object.Parent.Parent.Name)
-	if DoorNumber then
-		DoorNumber = DoorNumber + 1
-	end
-	if Floor == "Mines" then
-		DoorNumber = DoorNumber + 100
-	end
-	if Floor == "Backdoor" then
-		DoorNumber = DoorNumber - 50
-	end
-
-	return tostring(DoorNumber)
 end
 
 Functions.GetLibraryCode = function()
@@ -1158,7 +1144,6 @@ Toggles.AutoBreakerBox:OnChanged(function(Value)
 	end
 end)
 
-Groupboxes.Self_Automation:AddToggle("AutoHeartbeatMinigame", { Text = "Auto Heartbeat Minigame", Default = false, Tooltip = "Prevents the 'Figure' minigame from ever failing.", Disabled = not Functions.CheckCompatability({"getconnections"}), DisabledTooltip = Globals.DisabledTooltip })
 Groupboxes.Self_Automation:AddDivider()
 Groupboxes.Self_Automation:AddToggle("AutoUnlockPadlockToggle", {
 	Text = "Auto Unlock Padlock", Default = false, Tooltip = "Automatically enters the code into the library padlock."
@@ -1275,18 +1260,18 @@ end)
 Toggles.BypassEyes:OnChanged(function(Value)
 	if Value and Globals.IsEyes then
 		if Floor == "Fools" or Floor == "OldHotel" then
-			RemotesFolder.MotorReplication:FireServer(0, (Globals.SpoofOffset == 200 and 75 or -75), 0, false)
+			RemotesFolder.MotorReplication:FireServer(0, -75, 0, false)
 		else
-			RemotesFolder.MotorReplication:FireServer(-750)
+			RemotesFolder.MotorReplication:FireServer(-650)
 		end
 	end
 end)
 Toggles.BypassLookman:OnChanged(function(Value)
 	if Value and Globals.IsLookman then
 		if Floor == "Fools" or Floor == "OldHotel" then
-			RemotesFolder.MotorReplication:FireServer(0, (Globals.SpoofOffset == 200 and 75 or -75), 0, false)
+			RemotesFolder.MotorReplication:FireServer(0, -75, 0, false)
 		else
-			RemotesFolder.MotorReplication:FireServer(-750)
+			RemotesFolder.MotorReplication:FireServer(-650)
 		end
 	end
 end)
@@ -1380,10 +1365,6 @@ end)
 Toggles.VelocityManipulationToggle:AddKeyPicker("VelocityManipulationKeybind", {
 	Text = "Velocity Manipulation", Default = "V",
 	Mode = Library.IsMobile and "Toggle" or "Hold", SyncToggleState = true
-})
-Groupboxes.Exploits_BypassRight:AddDropdown("VelocityManipulationMode", {
-	Values = {"Velocity", "Pivot"}, Text = "Manipulation Method",
-	Default = 1,
 })
 
 Groupboxes.Exploits_BypassRight:AddDivider()
@@ -1624,10 +1605,10 @@ end)
 Groupboxes.Visuals_Effects:AddDivider()
 Groupboxes.Visuals_Effects:AddToggle("DisableGlitchJumpscare",   { Text = "Disable Glitch Jumpscare",   Default = false, Tooltip = "Disables the jumpscare from 'Glitch'" })
 Groupboxes.Visuals_Effects:AddToggle("DisableTimothyJumpscare",  { Text = "Disable Timothy Jumpscare",  Default = false, Tooltip = "Disables the jumpscare from 'Timothy'" })
-Groupboxes.Visuals_Effects:AddToggle("DisableVoidJumpscare",     { Text = "Disable Void Jumpscare",     Default = false, Tooltip = "Disables the jumpscare from 'Void'" })
+Groupboxes.Visuals_Effects:AddToggle("DisableVoidJumpscare",     { Text = "Disable Void Jumpscare",     Default = false, Tooltip = "Disables the jumpscare from 'Void'", Risky = Floor == "OldHotel" })
 Groupboxes.Visuals_Effects:AddDivider()
 Groupboxes.Visuals_Effects:AddToggle("DisableHideVignette",      { Text = "Disable Hide Vignette",      Default = false, Tooltip = "Disables the hiding screen effect." })
-Groupboxes.Visuals_Effects:AddToggle("DisableFiredampEffect",    { Text = "Disable Firedamp Effect",    Default = false, Tooltip = "Disables the firedamp screen effect." })
+Groupboxes.Visuals_Effects:AddToggle("DisableFiredampEffect",    { Text = "Disable Firedamp Effect",    Default = false, Tooltip = "Disabled the firedamp screen effect." })
 Groupboxes.Visuals_Effects:AddToggle("DisableEntityJumpscares",  { Text = "Disable Entity Jumpscares",  Default = false, Tooltip = "Disables jumpscares from entities like Rush and Ambush." })
 
 Toggles.DisableGlitchJumpscare:OnChanged(function(Value)
@@ -1704,9 +1685,6 @@ Groupboxes.Visuals_EntitySettings:AddDropdown("NotifyStyle", { Text = "Notify St
 Groupboxes.Visuals_EntitySettings:AddSlider("NotifySoundVolume", { Text = "Sound Volume", Min = 0, Max = 10, Default = 3, Rounding = 1 })
 Groupboxes.Visuals_EntitySettings:AddToggle("NotifyPlaySound", { Text = "Play Sound", Default = true, Tooltip = "Makes notifications play an alert sound." })
 Groupboxes.Visuals_EntitySettings:AddToggle("NotifyKeepNotifications", { Text = "Keep Notifications", Default = false, Tooltip = "Certain notifications will stay on screen until they are no longer needed." })
-Groupboxes.Visuals_EntitySettings:AddButton({ Text = "Test Notification", DoubleClick = false, Tooltip = "Sends a test notifcation, so you can see how your settings look.", Func = function()
-	Functions.Notify({Title = "This is a test."})
-end})
 
 Groupboxes.Visuals_ESP          = Tabs.Visuals:AddRightTabbox("ESP/Settings")
 Groupboxes.Visuals_ESP_Toggles  = Groupboxes.Visuals_ESP:AddTab("ESP")
@@ -1816,7 +1794,7 @@ local EntityESPLabels = {
 
 Toggles.DoorESPToggle:OnChanged(function(Value)
 	for _, Object in Objects.Doors do
-		if Value then Functions.AddESP({ Object = Object, Text = "Door " .. Functions.GetDoorNumber(Object), Color = Options.DoorESPColor.Value }, true)
+		if Value then Functions.AddESP({ Object = Object, Text = "Door", Color = Options.DoorESPColor.Value }, true)
 		else Functions.RemoveESP(Object) end
 	end
 end)
@@ -2388,10 +2366,6 @@ Groupboxes.Floors_Bypass:AddToggle("AutoRevive", {
 	Text = "Infinite Revives", Default = false, Tooltip = "Automatically revives after dying, with unlimited respawns.",
 	Risky = not (Floor == "Fools" or Floor == "OldHotel")
 })
-Groupboxes.Floors_Bypass:AddToggle("FigureGodmode", {
-	Text = "Figure Godmode", Default = false, Tooltip = "Prevents 'Figure' from hurting you.",
-	Risky = not (Floor == "Fools" or Floor == "OldHotel")
-})
 Groupboxes.Floors_Bypass:AddDivider()
 Groupboxes.Floors_Bypass:AddToggle("RemoveBasementGate",  { Text = "Remove Basement Gate",   Default = false, Tooltip = "Removes the gate from basement rooms.",            Risky = not (Floor == "Fools" or Floor == "OldHotel") })
 Groupboxes.Floors_Bypass:AddToggle("RemovePaintingsDoor", { Text = "Remove Paintings Door",  Default = false, Tooltip = "Removes the fireplace doors from painting rooms.", Risky = not (Floor == "Fools" or Floor == "OldHotel") })
@@ -2479,24 +2453,19 @@ if Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallme
 				Args[1] = true
 			end
 
-			if Self.Name == "ClutchHeartbeat" and Method == "FireServer" and Toggles.AutoHeartbeatMinigame.Value then
-				Args[2] = true
-			end
-
 			if Self.Name == "MotorReplication" and Method == "FireServer" then
 				local DoBypass = (Toggles.BypassEyes.Value and Globals.IsEyes) or (Toggles.BypassLookman.Value and Globals.IsLookman)
 				if DoBypass then
 					if Floor == "Fools" or Floor == "OldHotel" then
-						Args[1] = 0 Args[2] = (Globals.SpoofOffset == 200 and 75 or -75) Args[3] = 0 Args[4] = false
+						Args[1] = 0 Args[2] = -65 Args[3] = 0 Args[4] = false
 					else
-						Args[1] = -750
+						Args[1] = -650
 					end
 				end
 			end
 		end
 		return MainHook(Self, table.unpack(Args))
 	end))
-
     OtherHook = Abysall.Environment.hookmetamethod(game, "__index", Abysall.Environment.newcclosure(function(Self, Property)
         local Real = OtherHook(Self, Property)
 
@@ -2826,7 +2795,6 @@ Functions.HandleCharacter = function(NewCharacter)
 		end)
 	end
 
-	Globals.SpoofOffset = 0
 	Globals.LastAutoHide = tick()
 	Connections.AutoHideConnection = Services.RunService.Heartbeat:Connect(function()
 		if not Toggles.AutoClosetToggle.Value or tick() - Globals.LastAutoHide <= 0.05 then
@@ -2953,8 +2921,7 @@ Functions.HandleCharacter = function(NewCharacter)
 		end
 
 		if Floor == "OldHotel" or Floor == "Fools" then
-			local SpoofOffset = Toggles.PositionSpoof.Value and Functions.GetNearestEntity() and 200 or Toggles.FigureGodmode.Value and Functions.GetNearestFigure() and 200 or 0
-			Globals.SpoofOffset = SpoofOffset
+			local SpoofOffset = Toggles.PositionSpoof.Value and Functions.GetNearestEntity() and (Floor == "OldHotel" and 200 or -5) or 0
 			Collision.Position = RootPart.Position + Vector3.new(0, SpoofOffset, 0)
 			Collision.CanCollide = false
 			if Floor == "Fools" then
@@ -2995,15 +2962,11 @@ Functions.HandleCharacter = function(NewCharacter)
 		CollisionClone.CollisionGroup = Collision.CollisionGroup
 		CollisionClone.Position = RootPart.Position + Vector3.new(0, Toggles.PositionSpoof.Value and 1.75 or 0.18, 0)
 
-		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "Velocity" then
+		if Toggles.VelocityManipulationToggle.Value then
 			Globals.ManipulateBody.Parent = RootPart
 			Globals.ManipulateBody.Velocity = RootPart.CFrame.LookVector * 2.25
 		else
 			Globals.ManipulateBody.Parent = nil
-		end
-
-		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "Pivot" and Floor ~= "Fools" and Floor ~= "OldHotel" then
-			Character:PivotTo(Character:GetPivot() * CFrame.new(0, 0, 250))
 		end
 
 		if Toggles.FlyToggle.Value then
@@ -3017,9 +2980,9 @@ Functions.HandleCharacter = function(NewCharacter)
 			local DoEyesBypass = (Toggles.BypassEyes.Value and Globals.IsEyes) or (Toggles.BypassLookman.Value and Globals.IsLookman)
 			if DoEyesBypass then
 				if Floor == "Fools" or Floor == "OldHotel" then
-					RemotesFolder.MotorReplication:FireServer(0, (Globals.SpoofOffset == 200 and 75 or -75), 0, false)
+					RemotesFolder.MotorReplication:FireServer(0, -65, 0, false)
 				else
-					RemotesFolder.MotorReplication:FireServer(-750)
+					RemotesFolder.MotorReplication:FireServer(-650)
 				end
 			end
 		end
@@ -3340,7 +3303,7 @@ Functions.HandleObject = function(Object)
 				W.Part0 = HP W.Part1 = DoorPart W.Enabled = true
 			end
 			table.insert(Objects.Doors, HighlightModel)
-			if Toggles.DoorESPToggle.Value then Functions.AddESP({ Object = HighlightModel, Text = "Door " .. Functions.GetDoorNumber(Object), Color = Options.DoorESPColor.Value }, true) end
+			if Toggles.DoorESPToggle.Value then Functions.AddESP({ Object = HighlightModel, Text = "Door", Color = Options.DoorESPColor.Value }, true) end
 		else
 			local Root = Object:WaitForChild("Door", 9e9)
 			local HP = Instance.new("Part", Object)
@@ -3355,7 +3318,7 @@ Functions.HandleObject = function(Object)
 			W.Part0 = HP W.Part1 = Root W.Enabled = true
 			Instance.new("Humanoid", Object).Name = "HighlightHumanoid"
 			table.insert(Objects.Doors, HP)
-			if Toggles.DoorESPToggle.Value then Functions.AddESP({ Object = HP, Text = "Door " .. Functions.GetDoorNumber(Object), Color = Options.DoorESPColor.Value }, true) end
+			if Toggles.DoorESPToggle.Value then Functions.AddESP({ Object = HP, Text = "Door", Color = Options.DoorESPColor.Value }, true) end
 		end
 
 		local LastDoorFire = tick()
@@ -3696,13 +3659,6 @@ Functions.HandleObject = function(Object)
 		end
 		table.insert(Objects.Entities, Object)
 	elseif Name == "Figure" or Name == "FigureRig" or Name == "FigureRagdoll" then
-		for _, Part in pairs(Object:GetDescendants()) do
-			if Part:IsA("BasePart") then
-				Part.CanCollide = false
-				Part.CanTouch = false
-			end
-		end
-
 		if Toggles.EntityESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Figure", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
 		if Toggles.RemoveFigure.Value and Functions.CheckCompatability({"isnetworkowner"}) then
@@ -3855,9 +3811,8 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 	for _, N in ToolNames do Tool = Character:FindFirstChild(N) if Tool then break end end
 
 	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
-	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
+	if Object.Parent.Name == "SkullPrompt" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
 	
 	if Tool and Globals.UseAnimation then
 		Globals.UseAnimationBreak:Stop()
@@ -4030,9 +3985,8 @@ Functions.TriggerPrompt = function(Prompt)
 	end
 
 	if Prompt.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Prompt.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
-	if Prompt.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
+	if Prompt.Parent.Name == "SkullPrompt" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Prompt.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Prompt.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Prompt.Parent.Name ~= "CuttableVines" and Prompt.Parent.Name ~= "Chest_Vine" then return end
 
 	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["Glitch Fragments"] then return end
 
@@ -4121,9 +4075,8 @@ Connections.InfiniteItemsHandler = Services.ProximityPromptService.PromptTrigger
 	for _, N in ToolNames do Tool = Character:FindFirstChild(N) if Tool then break end end
 
 	if Object.Parent.Name == "CuttableVines" and not Functions.HasItem("Shears", true) or Object.Parent.Name == "Chest_Vine" and not Functions.HasItem("Shears", true) then return end
-	if Object.Parent.Name == "SkullLock" and not Functions.HasItem("SkeletonKey", true) then return end
+	if Object.Parent.Name == "SkullPrompt" and not Functions.HasItem("SkeletonKey", true) then return end
 	if Object.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) or Object.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) then return end
-	if Functions.HasItem("Shears", true) and Object.Parent.Name ~= "CuttableVines" and Object.Parent.Name ~= "Chest_Vine" then return end
 
 	if Tool and Globals.UseAnimation and Globals.UseAnimationBreak then
 		Globals.UseAnimation:Stop()
@@ -4231,11 +4184,7 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 
 	if Entity.Name ~= "GloombatSwarm" then
 		if Toggles.EntityESPToggle.Value then
-			if Entity.Name == "MonumentEntity" then
-				Functions.AddESP({ Object = Entity.Top, Text = Alias, Color = Options.EntityESPColor.Value })
-			else
-				Functions.AddESP({ Object = Entity, Text = Alias, Color = Options.EntityESPColor.Value })
-			end
+			Functions.AddESP({ Object = Entity, Text = Alias, Color = Options.EntityESPColor.Value })
 		end
 		table.insert(Objects.Entities, Entity)
 	end
@@ -4248,7 +4197,7 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 
 	if Entity.Name == "Lookman" then
 		CurrentRooms.ChildAdded:Wait()
-		task.wait(10)
+		task.wait(3)
 		Entity:Destroy()
 	end
 end)
