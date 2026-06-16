@@ -1234,15 +1234,14 @@ Groupboxes.Self_Automation:AddDropdown("SpecateEntityMode", {
 -- ─────────────────────────────────────────────────────────
 Groupboxes.Lobby = Tabs.General:AddRightGroupbox("Lobby Tools")
 
--- Cycle Achievements (SpamBadges)
 Groupboxes.Lobby:AddToggle("SpamBadges", {
         Text = "Cycle Achievements",
         Default = false,
-        Tooltip = "Rapidly equips a random badge/achievement, visible to other players.",
+        Tooltip = "Rapidly cycles your equipped badge so others see it change.",
 })
 Groupboxes.Lobby:AddSlider("SpamBadgesDelay", {
         Text = "Cycle Delay (s)",
-        Default = 0.1,
+        Default = 0.15,
         Min = 0.05,
         Max = 2,
         Rounding = 2,
@@ -1251,111 +1250,34 @@ Groupboxes.Lobby:AddSlider("SpamBadgesDelay", {
 
 Groupboxes.Lobby:AddDivider()
 
--- Elevator Sniper
 Groupboxes.Lobby:AddToggle("ElevatorSniper", {
         Text = "Elevator Sniper",
         Default = false,
-        Tooltip = "Automatically joins the selected player's elevator in the lobby.",
-})
-
--- Build a live player list for the sniper dropdown
-local function GetPlayerNames()
-        local Names = {}
-        for _, P in Services.Players:GetPlayers() do
-                if P ~= LocalPlayer then table.insert(Names, P.Name) end
-        end
-        return Names
-end
-
-local ElevatorTargetNames = GetPlayerNames()
-Groupboxes.Lobby:AddDropdown("ElevatorSniperTarget", {
-        Values = #ElevatorTargetNames > 0 and ElevatorTargetNames or { "(no players)" },
-        Default = 1,
-        AllowNull = true,
-        Text = "Target Player",
-        Compact = true,
+        Tooltip = "Auto-joins the first occupied elevator found in the lobby.",
 })
 
 Groupboxes.Lobby:AddDivider()
 
--- Codes list used by Redeem all Codes
-local CodesList = {
-        "ThanksForPlaying!", "STAYIN ALIVE", "100MILVISITS", "SCREECHSUCKS",
-        "GOODNIGHT", "DOORBELL", "LIGHTWORK", "SEEK", "1BILLION", "WELCOMEBACK",
-}
-
 Groupboxes.Lobby:AddButton({
         Text = "Redeem all Codes",
-        Tooltip = "Fires all currently known active codes for the in-game shop.",
+        Tooltip = "Fires all known active shop codes in sequence.",
         Func = function()
-                for _, Code in ipairs(CodesList) do
-                        if RemotesFolder:FindFirstChild("ShopCode") then
+                local Codes = {
+                        "ThanksForPlaying!", "STAYIN ALIVE", "100MILVISITS", "SCREECHSUCKS",
+                        "GOODNIGHT", "DOORBELL", "LIGHTWORK", "SEEK", "1BILLION", "WELCOMEBACK",
+                }
+                for _, Code in ipairs(Codes) do
+                        if RemotesFolder and RemotesFolder:FindFirstChild("ShopCode") then
                                 RemotesFolder.ShopCode:FireServer(Code)
                         end
                         task.wait(1.1)
                 end
-                Functions.Notify({ Title = "Codes Redeemed", Body = "Attempted all known active codes." })
+                Functions.Notify({ Title = "Codes", Body = "Attempted all known active codes." })
         end,
 })
 
-Groupboxes.Lobby:AddDivider()
-
--- Rejoin / ServerHop
-Groupboxes.Lobby:AddButton({
-        Text = "Rejoin Server",
-        Tooltip = "Rejoins the current server.",
-        DoubleClick = true,
-        Func = function()
-                local PlaceId = game.PlaceId
-                local JobId   = game.JobId
-                if #Services.Players:GetPlayers() <= 1 then
-                        LocalPlayer:Kick("Rejoining…")
-                        task.wait()
-                        Services.TeleportService:Teleport(PlaceId, LocalPlayer)
-                else
-                        Services.TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
-                end
-        end,
-})
-
-Groupboxes.Lobby:AddButton({
-        Text = "Server Hop",
-        Tooltip = "Joins a random different server.",
-        DoubleClick = true,
-        Func = function()
-                local PlaceId = game.PlaceId
-                local JobId   = game.JobId
-                local ok, body = pcall(function()
-                        return Services.HttpService:JSONDecode(game:HttpGet(
-                                "https://games.roblox.com/v1/games/" .. PlaceId ..
-                                "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true"
-                        ))
-                end)
-                if not ok or not body or not body.data then
-                        Functions.Notify({ Title = "Server Hop", Body = "Failed to fetch servers." })
-                        return
-                end
-                local Servers = {}
-                for _, v in ipairs(body.data) do
-                        if type(v) == "table" and v.id and v.id ~= JobId
-                                and tonumber(v.playing) and tonumber(v.maxPlayers)
-                                and v.playing < v.maxPlayers
-                        then
-                                table.insert(Servers, v.id)
-                        end
-                end
-                if #Servers > 0 then
-                        Services.TeleportService:TeleportToPlaceInstance(PlaceId, Servers[math.random(1, #Servers)], LocalPlayer)
-                else
-                        Functions.Notify({ Title = "Server Hop", Body = "No available servers found." })
-                end
-        end,
-})
-
--- Lobby state variables (connections wired up after all UI is built)
-local PreviousBadge = ""
-local UnlockedBadges = {}
-local LastSpamBadgeTick = 0
+-- State variables used by lobby connections (wired at end of script)
+local LastSpamBadgeTick    = 0
 local LastElevatorSniperTick = 0
 
 Groupboxes.Self_Misc = Tabs.General:AddRightGroupbox("Miscellaneous")
@@ -4542,78 +4464,47 @@ end)
 -- LOBBY CONNECTIONS  (Cycle Achievements · Elevator Sniper)
 -- ─────────────────────────────────────────────────────────
 
+-- Known badge IDs used to cycle achievements visually
+local BadgeCycleIds = {
+        "WakeUp", "FacingDeath", "Survive100", "Survive200",
+        "Survive500", "DoorsCompleted", "Explorer", "GoldCollector",
+}
+local PreviousBadgeIdx = 1
+
 Connections.SpamBadgesConnection = Services.RunService.Heartbeat:Connect(function()
         if not Toggles.SpamBadges.Value then return end
         if tick() - LastSpamBadgeTick < Options.SpamBadgesDelay.Value then return end
         LastSpamBadgeTick = tick()
-
-        -- Lazy-build badge list from achievements UI frame (lobby only)
-        if #UnlockedBadges == 0 then
-                local AchUI = LocalPlayer.PlayerGui:FindFirstChild("MainUI") or LocalPlayer.PlayerGui:FindFirstChild("Gui")
-                local LobbyFrame = AchUI and (AchUI:FindFirstChild("LobbyFrame") or AchUI:FindFirstChild("LobbyUI"))
-                local AchList   = LobbyFrame and (LobbyFrame:FindFirstChild("Achievements") or LobbyFrame:FindFirstChild("AchievementsFrame"))
-                local List       = AchList and AchList:FindFirstChild("List")
-                if List then
-                        for _, Frame in List:GetChildren() do
-                                if Frame:IsA("ImageButton") and Frame.ImageTransparency == 0 then
-                                        table.insert(UnlockedBadges, Frame.Name)
-                                end
-                        end
-                end
-        end
-
-        if #UnlockedBadges > 0 and RemotesFolder:FindFirstChild("FlexAchievement") then
-                local Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
-                local Tries = 0
-                while Badge == PreviousBadge and #UnlockedBadges > 1 and Tries < 10 do
-                        Badge = UnlockedBadges[math.random(1, #UnlockedBadges)]
-                        Tries += 1
-                end
-                RemotesFolder.FlexAchievement:FireServer(Badge)
-                PreviousBadge = Badge
-        end
+        if not (RemotesFolder and RemotesFolder:FindFirstChild("FlexAchievement")) then return end
+        -- Cycle through IDs round-robin so each call fires a different one
+        PreviousBadgeIdx = (PreviousBadgeIdx % #BadgeCycleIds) + 1
+        RemotesFolder.FlexAchievement:FireServer(BadgeCycleIds[PreviousBadgeIdx])
 end)
 
 Connections.ElevatorSniperConnection = Services.RunService.Heartbeat:Connect(function()
         if not Toggles.ElevatorSniper.Value then return end
-        if tick() - LastElevatorSniperTick < 0.5 then return end
+        if tick() - LastElevatorSniperTick < 1 then return end
         LastElevatorSniperTick = tick()
-
-        local TargetName = Options.ElevatorSniperTarget.Value
-        if not TargetName or TargetName == "(no players)" then return end
-        local TargetPlayer = Services.Players:FindFirstChild(tostring(TargetName))
-        if not TargetPlayer or not TargetPlayer.Character then return end
-
+        if not RemotesFolder then return end
         local LobbyFolder = Services.Workspace:FindFirstChild("Lobby")
         if not LobbyFolder then return end
-        local ElevatorFolder = LobbyFolder:FindFirstChild("LobbyElevators")
+        local ElevFolder = LobbyFolder:FindFirstChild("LobbyElevators")
                 or LobbyFolder:FindFirstChild("Elevators")
-        if not ElevatorFolder then return end
-
-        local TargetElevId = TargetPlayer.Character:GetAttribute("InGameElevator")
-        if not TargetElevId then return end
-
-        for _, Elevator in ElevatorFolder:GetChildren() do
-                if Elevator:GetAttribute("ID") == TargetElevId then
-                        if RemotesFolder:FindFirstChild("ElevatorJoin") then
-                                RemotesFolder.ElevatorJoin:FireServer(Elevator)
+        if not ElevFolder then return end
+        -- Join the first elevator that has at least one other player in it
+        for _, Elevator in ElevFolder:GetChildren() do
+                local ElevId = Elevator:GetAttribute("ID")
+                if not ElevId then continue end
+                for _, Player in Services.Players:GetPlayers() do
+                        if Player ~= LocalPlayer and Player.Character then
+                                if Player.Character:GetAttribute("InGameElevator") == ElevId then
+                                        if RemotesFolder:FindFirstChild("ElevatorJoin") then
+                                                RemotesFolder.ElevatorJoin:FireServer(Elevator)
+                                        end
+                                        return
+                                end
                         end
-                        break
                 end
-        end
-end)
-
--- Keep the player list fresh whenever someone joins/leaves
-Services.Players.PlayerAdded:Connect(function()
-        local Names = GetPlayerNames()
-        if Options.ElevatorSniperTarget then
-                Options.ElevatorSniperTarget:SetValues(#Names > 0 and Names or { "(no players)" })
-        end
-end)
-Services.Players.PlayerRemoving:Connect(function()
-        local Names = GetPlayerNames()
-        if Options.ElevatorSniperTarget then
-                Options.ElevatorSniperTarget:SetValues(#Names > 0 and Names or { "(no players)" })
         end
 end)
 
