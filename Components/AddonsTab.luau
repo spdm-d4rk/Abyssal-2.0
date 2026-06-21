@@ -28,19 +28,19 @@ return function(Window)
 	local function RunFile(FilePath)
 		local Ok, Content = pcall(Env.readfile, FilePath)
 		if not Ok or not Content or Content == "" then
-			Library:Notify("Addon Error: Cannot read " .. tostring(FilePath):match("([^\\/]+)$"))
+			Library:Notify("<b>[Addons]</b>\nAddon Error: Cannot read " .. tostring(FilePath):match("([^\\/]+)$"), 5)
 			return
 		end
 		local Fn, Err = loadstring(Content)
 		if not Fn then
-			Library:Notify("Addon Error: " .. tostring(Err):sub(1, 80))
+			Library:Notify("<b>[Addons]</b>\nAddon Error: " .. tostring(Err):sub(1, 80), 5)
 			return
 		end
 		local Ok2, Err2 = pcall(Fn)
 		if not Ok2 then
-			Library:Notify("Addon Error: " .. tostring(Err2):sub(1, 80))
+			Library:Notify("<b>[Addons]</b>\nAddon Error: " .. tostring(Err2):sub(1, 80), 5)
 		else
-			Library:Notify(tostring(FilePath):match("([^\\/]+)$") .. " executed.")
+			Library:Notify("<b>[Addons]</b>\n" .. tostring(FilePath):match("([^\\/]+)$") .. " executed.", 5)
 		end
 	end
 
@@ -48,23 +48,23 @@ return function(Window)
 	local function RunURL(URL, Label)
 		local HttpOk, Content = pcall(function() return game:HttpGet(URL) end)
 		if not HttpOk or not Content then
-			Library:Notify("Addon Error: Failed to fetch URL.")
+			Library:Notify("<b>[Addons]</b>\nAddon Error: Failed to fetch URL.", 5)
 			return
 		end
 		local Fn, Err = loadstring(Content)
 		if not Fn then
-			Library:Notify("Addon Error: " .. tostring(Err):sub(1, 80))
+			Library:Notify("<b>[Addons]</b>\nAddon Error: " .. tostring(Err):sub(1, 80), 5)
 			return
 		end
 		local Ok2, Err2 = pcall(Fn)
 		if not Ok2 then
-			Library:Notify("Addon Error: " .. tostring(Err2):sub(1, 80))
+			Library:Notify("<b>[Addons]</b>\nAddon Error: " .. tostring(Err2):sub(1, 80), 5)
 		else
-			Library:Notify((Label or "Script") .. " executed.")
+			Library:Notify("<b>[Addons]</b>\n" .. (Label or "Script") .. " executed.", 5)
 		end
 	end
 
-	local AddonsTab = Window:AddTab("Addons", "code")
+	local AddonsTab = Window:AddTab("Addons", "package-plus")
 
 	-- LEFT: Script Workspace — auto-lists .lua/.luau files in Abysall/Scripts/
 	local WorkspaceGroup = AddonsTab:AddLeftGroupbox("Script Workspace")
@@ -82,9 +82,13 @@ return function(Window)
 					if Name:match("%.luau?$") then
 						HasFiles = true
 						local FP = FilePath
-						WorkspaceGroup:AddButton(Name, function()
-							RunFile(FP)
-						end)
+						WorkspaceGroup:AddButton({
+							Text = Name,
+							DoubleClick = false,
+							Func = function()
+								RunFile(FP)
+							end,
+						})
 					end
 				end
 			end
@@ -112,43 +116,51 @@ return function(Window)
 		Finished = false,
 	})
 	URLGroup:AddDivider()
-	URLGroup:AddButton("Execute from URL", function()
-		local URL = Options.AddonScriptURL.Value
-		if not URL or URL == "" then
-			Library:Notify("Enter a script URL first.")
-			return
-		end
-		local Label = Options.AddonScriptName.Value
-		RunURL(URL, Label ~= "" and Label or "Script")
-	end)
-	URLGroup:AddButton("Save URL to Scripts Folder", function()
-		local Name = Options.AddonScriptName.Value
-		local URL  = Options.AddonScriptURL.Value
-		if not Name or Name == "" then
-			Library:Notify("Enter a script name first.")
-			return
-		end
-		if not URL or URL == "" then
-			Library:Notify("Enter a script URL first.")
-			return
-		end
-		if not Env.writefile or not Env.makefolder then
-			Library:Notify("Your executor doesn't support file saving.")
-			return
-		end
-		local HttpOk, Content = pcall(function() return game:HttpGet(URL) end)
-		if not HttpOk or not Content then
-			Library:Notify("Addon Error: Failed to fetch URL.")
-			return
-		end
-		pcall(Env.makefolder, "Abysall")
-		pcall(Env.makefolder, "Abysall/Scripts")
-		local FileName = Name:match("%.luau?$") and Name or (Name .. ".lua")
-		local WriteOk = pcall(Env.writefile, "Abysall/Scripts/" .. FileName, Content)
-		if WriteOk then
-			Library:Notify(FileName .. " saved. Rejoin to see it in workspace.")
-		else
-			Library:Notify("Addon Error: Failed to write file.")
-		end
-	end)
+	URLGroup:AddButton({
+		Text = "Execute from URL",
+		DoubleClick = false,
+		Func = function()
+			local URL = Options.AddonScriptURL.Value
+			if not URL or URL == "" then
+				Library:Notify("<b>[Addons]</b>\nEnter a script URL first.", 5)
+				return
+			end
+			local Label = Options.AddonScriptName.Value
+			RunURL(URL, Label ~= "" and Label or "Script")
+		end,
+	})
+	URLGroup:AddButton({
+		Text = "Save URL to Scripts Folder",
+		DoubleClick = false,
+		Func = function()
+			local Name = Options.AddonScriptName.Value
+			local URL  = Options.AddonScriptURL.Value
+			if not Name or Name == "" then
+				Library:Notify("<b>[Addons]</b>\nEnter a script name first.", 5)
+				return
+			end
+			if not URL or URL == "" then
+				Library:Notify("<b>[Addons]</b>\nEnter a script URL first.", 5)
+				return
+			end
+			if not Env.writefile or not Env.makefolder then
+				Library:Notify("<b>[Addons]</b>\nYour executor doesn't support file saving.", 5)
+				return
+			end
+			local HttpOk, Content = pcall(function() return game:HttpGet(URL) end)
+			if not HttpOk or not Content then
+				Library:Notify("<b>[Addons]</b>\nAddon Error: Failed to fetch URL.", 5)
+				return
+			end
+			pcall(Env.makefolder, "Abysall")
+			pcall(Env.makefolder, "Abysall/Scripts")
+			local FileName = Name:match("%.luau?$") and Name or (Name .. ".lua")
+			local WriteOk = pcall(Env.writefile, "Abysall/Scripts/" .. FileName, Content)
+			if WriteOk then
+				Library:Notify("<b>[Addons]</b>\n" .. FileName .. " saved. Rejoin to see it.", 5)
+			else
+				Library:Notify("<b>[Addons]</b>\nAddon Error: Failed to write file.", 5)
+			end
+		end,
+	})
 end
