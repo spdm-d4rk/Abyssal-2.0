@@ -1244,6 +1244,26 @@ Groupboxes.Self_Misc:AddButton({
                 end
         end
 })
+Groupboxes.Self_Misc:AddButton({
+        Text = "Bring Drops",
+        Tooltip = "Brings all dropped items to your current position (FE).",
+        Func = function()
+                if Drops then
+                        for _, Drop in pairs(Drops:GetChildren()) do
+                                if Drop:IsA("BasePart") then
+                                        Drop.CFrame = RootPart.CFrame + Vector3.new(0, 3, 0)
+                                elseif Drop:IsA("Model") then
+                                        local Main = Drop.PrimaryPart or Drop:FindFirstChildWhichIsA("BasePart")
+                                        if Main then
+                                                Drop:SetPrimaryPartCFrame(RootPart.CFrame + Vector3.new(0, 3, 0))
+                                        end
+                                end
+                        end
+                else
+                        Functions.Notify({ Title = "Bring Drops", Body = "No drops folder found in workspace." })
+                end
+        end
+})
 
 Groupboxes.Exploits_Bypass = Tabs.Exploits:AddLeftGroupbox("Bypass")
 Groupboxes.Exploits_Bypass:AddToggle("BypassGiggle",         { Text = "Bypass Giggle",           Default = false, Tooltip = "Prevents 'Giggle' from attacking you." })
@@ -4481,6 +4501,5 @@ Library:OnUnload(function()
 end)
 
 while not Globals.MainUI do task.wait() end
-Abysall.Interface.ApplyAddonsTab(Window)
 Abysall.Interface.ApplySettingsTab(Window)
 Functions.Notify({ Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds." , Body = "Press '" .. tostring(Options.MenuKeybind.Value) .. "' to toggle the UI."})
