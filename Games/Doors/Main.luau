@@ -1407,24 +1407,26 @@ Groupboxes.Exploits_BypassRight:AddDropdown("InfiniteItemsList", {
         DisabledTooltip = Globals.IncompatibleMessage
 })
 Groupboxes.Exploits_BypassRight:AddButton({
-        Text = "Bring Drops",
-        Tooltip = "Teleports all dropped items in the Drops folder to your current position (FE).",
+        Text = "Bring Drops (FE)",
+        Tooltip = "Bring all the dropped items to your current pos.",
         Func = function()
-                local DropsFolder = Services.Workspace:FindFirstChild("Drops")
-                if DropsFolder then
-                        for _, Drop in pairs(DropsFolder:GetChildren()) do
-                                if Drop:IsA("BasePart") then
-                                        Drop.CFrame = RootPart.CFrame + Vector3.new(0, 3, 0)
-                                elseif Drop:IsA("Model") then
-                                        local Main = Drop.PrimaryPart or Drop:FindFirstChildWhichIsA("BasePart")
-                                        if Main then
-                                                Drop:SetPrimaryPartCFrame(RootPart.CFrame + Vector3.new(0, 3, 0))
+                local player = Services.Players.LocalPlayer
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local drops = Services.Workspace:FindFirstChild("Drops")
+                if drops then
+                        for _, drop in pairs(drops:GetChildren()) do
+                                if drop:IsA("BasePart") then
+                                        drop.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+                                elseif drop:IsA("Model") then
+                                        local main = drop.PrimaryPart or drop:FindFirstChildWhichIsA("BasePart")
+                                        if main then
+                                                drop:SetPrimaryPartCFrame(hrp.CFrame + Vector3.new(0, 3, 0))
                                         end
                                 end
                         end
-                        Functions.Notify({ Title = "Bring Drops", Body = "All drops brought to your position." })
                 else
-                        Functions.Notify({ Title = "Bring Drops", Body = "No Drops folder found in workspace." })
+                        Functions.Notify({ Title = "Bring Drops", Body = "Drops folder not found." })
                 end
         end
 })
