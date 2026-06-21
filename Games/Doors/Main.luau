@@ -1022,7 +1022,6 @@ local Tabs = {
         Exploits = Window:AddTab("Exploits", "shield"),
         Visuals  = Window:AddTab("Visuals", "eye"),
         Floors   = Window:AddTab("Floors", "earth"),
-        Addons   = Window:AddTab("Addons", "code"),
 }
 
 Groupboxes.General_Character = Tabs.General:AddLeftGroupbox("Character")
@@ -2473,156 +2472,6 @@ Connections.KnobFarm = Services.RunService.Heartbeat:Connect(function()
                 end
         end
 end)
-
--- ──────────────────────────────────────────────────────────────
--- ADDONS TAB
--- ──────────────────────────────────────────────────────────────
-local Addons_Groupboxes = {}
-
--- Auto-create the Scripts workspace folder on load
-if Functions.CheckCompatability({"makefolder"}) then
-        pcall(makefolder, "Abysall")
-        pcall(makefolder, "Abysall/Scripts")
-end
-
--- Helper: run a local .lua/.luau file from the Scripts folder
-local function Addon_RunFile(FilePath)
-        local Ok, Content = pcall(readfile, FilePath)
-        if not Ok or not Content or Content == "" then
-                Functions.Notify({ Title = "Addon Error", Body = "Cannot read: " .. tostring(FilePath):match("([^\\/]+)$"), Time = 5 })
-                return
-        end
-        local Fn, CompileErr = loadstring(Content)
-        if not Fn then
-                Functions.Notify({ Title = "Addon Error", Body = tostring(CompileErr):sub(1, 80), Time = 8 })
-                return
-        end
-        local RunOk, RunErr = pcall(Fn)
-        if not RunOk then
-                Functions.Notify({ Title = "Addon Error", Body = tostring(RunErr):sub(1, 80), Time = 8 })
-        else
-                local Name = tostring(FilePath):match("([^\\/]+)$") or FilePath
-                Functions.Notify({ Title = "Addon Loaded", Body = Name .. " executed.", Time = 3 })
-        end
-end
-
--- Helper: run a script from a raw URL
-local function Addon_RunURL(URL, Label)
-        local HttpOk, Content = pcall(function() return game:HttpGet(URL) end)
-        if not HttpOk or not Content then
-                Functions.Notify({ Title = "Addon Error", Body = "Failed to fetch URL.", Time = 5 })
-                return
-        end
-        local Fn, CompileErr = loadstring(Content)
-        if not Fn then
-                Functions.Notify({ Title = "Addon Error", Body = tostring(CompileErr):sub(1, 80), Time = 8 })
-                return
-        end
-        local RunOk, RunErr = pcall(Fn)
-        if not RunOk then
-                Functions.Notify({ Title = "Addon Error", Body = tostring(RunErr):sub(1, 80), Time = 8 })
-        else
-                Functions.Notify({ Title = "Addon Loaded", Body = (Label or "Script") .. " executed.", Time = 3 })
-        end
-end
-
--- LEFT: Script Workspace — lists every .lua/.luau in Abysall/Scripts/
-Addons_Groupboxes.Workspace = Tabs.Addons:AddLeftGroupbox("Script Workspace")
-Addons_Groupboxes.Workspace:AddLabel("Folder: Abysall/Scripts/")
-Addons_Groupboxes.Workspace:AddLabel("Place .lua files there, then rejoin.")
-Addons_Groupboxes.Workspace:AddDivider()
-
-do
-        local HasFiles = false
-        if Functions.CheckCompatability({"listfiles", "readfile"}) then
-                local ListOk, Files = pcall(listfiles, "Abysall/Scripts")
-                if ListOk and Files then
-                        for _, FilePath in ipairs(Files) do
-                                local Name = tostring(FilePath):match("([^\\/]+)$") or FilePath
-                                if Name:match("%.luau?$") then
-                                        HasFiles = true
-                                        local FP = FilePath
-                                        Addons_Groupboxes.Workspace:AddButton({
-                                                Text = Name,
-                                                DoubleClick = false,
-                                                Func = function()
-                                                        Addon_RunFile(FP)
-                                                end,
-                                        })
-                                end
-                        end
-                end
-        end
-        if not HasFiles then
-                Addons_Groupboxes.Workspace:AddLabel("No scripts found yet.")
-        end
-end
-
--- RIGHT: Load from URL — execute or save a script from a raw URL
-Addons_Groupboxes.URL = Tabs.Addons:AddRightGroupbox("Load from URL")
-Addons_Groupboxes.URL:AddLabel("Paste a raw GitHub URL below.")
-Addons_Groupboxes.URL:AddInput("AddonScriptName", {
-        Text = "Script Name",
-        Default = "",
-        Placeholder = "MyAddon",
-        Numeric = false,
-        Finished = false,
-})
-Addons_Groupboxes.URL:AddInput("AddonScriptURL", {
-        Text = "Script URL",
-        Default = "",
-        Placeholder = "https://raw.githubusercontent.com/...",
-        Numeric = false,
-        Finished = false,
-})
-Addons_Groupboxes.URL:AddDivider()
-Addons_Groupboxes.URL:AddButton({
-        Text = "Execute from URL",
-        DoubleClick = false,
-        Func = function()
-                local URL = Options.AddonScriptURL.Value
-                if URL == "" then
-                        Functions.Notify({ Title = "Addons", Body = "Enter a script URL first.", Time = 4 })
-                        return
-                end
-                Addon_RunURL(URL, Options.AddonScriptName.Value ~= "" and Options.AddonScriptName.Value or "Script")
-        end,
-})
-Addons_Groupboxes.URL:AddButton({
-        Text = "Save URL to Scripts Folder",
-        DoubleClick = false,
-        Func = function()
-                local Name = Options.AddonScriptName.Value
-                local URL  = Options.AddonScriptURL.Value
-                if Name == "" then
-                        Functions.Notify({ Title = "Addons", Body = "Enter a script name first.", Time = 4 })
-                        return
-                end
-                if URL == "" then
-                        Functions.Notify({ Title = "Addons", Body = "Enter a script URL first.", Time = 4 })
-                        return
-                end
-                if not Functions.CheckCompatability({"writefile", "makefolder"}) then
-                        Functions.Notify({ Title = "Addons", Body = Globals.IncompatibleMessage, Time = 5 })
-                        return
-                end
-                local HttpOk, Content = pcall(function() return game:HttpGet(URL) end)
-                if not HttpOk or not Content then
-                        Functions.Notify({ Title = "Addon Error", Body = "Failed to fetch URL.", Time = 5 })
-                        return
-                end
-                pcall(makefolder, "Abysall")
-                pcall(makefolder, "Abysall/Scripts")
-                local FileName = Name:match("%.luau?$") and Name or (Name .. ".lua")
-                local WriteOk = pcall(writefile, "Abysall/Scripts/" .. FileName, Content)
-                if WriteOk then
-                        Functions.Notify({ Title = "Addon Saved", Body = FileName .. " saved. Rejoin to see it in workspace.", Time = 5 })
-                else
-                        Functions.Notify({ Title = "Addon Error", Body = "Failed to write file.", Time = 5 })
-                end
-        end,
-})
--- ──────────────────────────────────────────────────────────────
 
 local MainHook
 local OtherHook
@@ -4632,5 +4481,6 @@ Library:OnUnload(function()
 end)
 
 while not Globals.MainUI do task.wait() end
+Abysall.Interface.ApplyAddonsTab(Window)
 Abysall.Interface.ApplySettingsTab(Window)
 Functions.Notify({ Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds." , Body = "Press '" .. tostring(Options.MenuKeybind.Value) .. "' to toggle the UI."})
