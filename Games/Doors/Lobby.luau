@@ -542,11 +542,6 @@ Groupboxes.General_QuickPlay:AddButton({
         end
 })
 
-Library:OnUnload(function()
-    Connections.MainConnection:Disconnect()
-        getgenv().Abysall = nil
-end)
-
 -- ──────────────────────────────────────────────────────────────
 -- ADDONS TAB
 -- ──────────────────────────────────────────────────────────────
@@ -703,6 +698,11 @@ end
 
 LoadSavedAddons()
 -- ──────────────────────────────────────────────────────────────
+
+Library:OnUnload(function()
+    Connections.MainConnection:Disconnect()
+        getgenv().Abysall = nil
+end)
 
 Abysall.Interface.ApplySettingsTab(Window)
 Functions.Notify({ Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds." , Body = "Press '" .. tostring(Options.MenuKeybind.Value) .. "' to toggle the UI."})
