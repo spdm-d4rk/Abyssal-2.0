@@ -7,8 +7,8 @@ local Interface = {
   SaveManager = loadstring(game:HttpGet(BaseUrl .. "addons/SaveManager.lua"))(),
   ThemeManager = loadstring(game:HttpGet(BaseUrl .. "addons/ThemeManager.lua"))(),
 
-  ApplyInfoTab    = loadstring(game:HttpGet(AbysallUrl .. "Components/InfoTab.luau"))(),
-  ApplyAddonsTab  = loadstring(game:HttpGet(AbysallUrl .. "Components/AddonsTab.luau"))(),
+  ApplyInfoTab     = loadstring(game:HttpGet(AbysallUrl .. "Components/InfoTab.luau"))(),
+  ApplyAddonsTab   = loadstring(game:HttpGet(AbysallUrl .. "Components/AddonsTab.luau"))(),
   ApplySettingsTab = loadstring(game:HttpGet(AbysallUrl .. "Components/SettingsTab.luau"))()
 }
 
@@ -29,7 +29,7 @@ Interface.ThemeManager.BuiltInThemes = {
 ["Catppuccin"]     = { 14, { FontColor = "d9e0ee", MainColor = "302d41", AccentColor = "f5c2e7", BackgroundColor = "1e1e2e", OutlineColor = "575268" } },
 ["One Dark"]       = { 15, { FontColor = "abb2bf", MainColor = "282c34", AccentColor = "c678dd", BackgroundColor = "21252b", OutlineColor = "5c6370" } },
 ["Cyberpunk"]      = { 16, { FontColor = "f9f9f9", MainColor = "262335", AccentColor = "00ff9f", BackgroundColor = "1a1a2e", OutlineColor = "413c5e" } },
-["Oceanic Next"]   = { 17, { FontColor = "d8dee9", MainColor = "1b2b34", AccentColor = "6699cc", BackgroundColor = "16161f", OutlineColor = "343d46" } },
+["Oceanic Next"]   = { 17, { FontColor = "d8dee9", MainColor = "1b2b34", AccentColor = "6699cc", BackgroundColor = "16232a", OutlineColor = "343d46" } },
 ["Material"]       = { 18, { FontColor = "eeffff", MainColor = "212121", AccentColor = "82aaff", BackgroundColor = "151515", OutlineColor = "424242" } },
 }
 
