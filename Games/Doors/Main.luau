@@ -1244,26 +1244,6 @@ Groupboxes.Self_Misc:AddButton({
                 end
         end
 })
-Groupboxes.Self_Misc:AddButton({
-        Text = "Bring Drops",
-        Tooltip = "Brings all dropped items to your current position (FE).",
-        Func = function()
-                if Drops then
-                        for _, Drop in pairs(Drops:GetChildren()) do
-                                if Drop:IsA("BasePart") then
-                                        Drop.CFrame = RootPart.CFrame + Vector3.new(0, 3, 0)
-                                elseif Drop:IsA("Model") then
-                                        local Main = Drop.PrimaryPart or Drop:FindFirstChildWhichIsA("BasePart")
-                                        if Main then
-                                                Drop:SetPrimaryPartCFrame(RootPart.CFrame + Vector3.new(0, 3, 0))
-                                        end
-                                end
-                        end
-                else
-                        Functions.Notify({ Title = "Bring Drops", Body = "No drops folder found in workspace." })
-                end
-        end
-})
 
 Groupboxes.Exploits_Bypass = Tabs.Exploits:AddLeftGroupbox("Bypass")
 Groupboxes.Exploits_Bypass:AddToggle("BypassGiggle",         { Text = "Bypass Giggle",           Default = false, Tooltip = "Prevents 'Giggle' from attacking you." })
@@ -1425,6 +1405,28 @@ Groupboxes.Exploits_BypassRight:AddDropdown("InfiniteItemsList", {
         Multi = true, AllowNull = true,
         Disabled = not Functions.CheckCompatability({"fireproximityprompt"}),
         DisabledTooltip = Globals.IncompatibleMessage
+})
+Groupboxes.Exploits_BypassRight:AddButton({
+        Text = "Bring Drops",
+        Tooltip = "Teleports all dropped items in the Drops folder to your current position (FE).",
+        Func = function()
+                local DropsFolder = Services.Workspace:FindFirstChild("Drops")
+                if DropsFolder then
+                        for _, Drop in pairs(DropsFolder:GetChildren()) do
+                                if Drop:IsA("BasePart") then
+                                        Drop.CFrame = RootPart.CFrame + Vector3.new(0, 3, 0)
+                                elseif Drop:IsA("Model") then
+                                        local Main = Drop.PrimaryPart or Drop:FindFirstChildWhichIsA("BasePart")
+                                        if Main then
+                                                Drop:SetPrimaryPartCFrame(RootPart.CFrame + Vector3.new(0, 3, 0))
+                                        end
+                                end
+                        end
+                        Functions.Notify({ Title = "Bring Drops", Body = "All drops brought to your position." })
+                else
+                        Functions.Notify({ Title = "Bring Drops", Body = "No Drops folder found in workspace." })
+                end
+        end
 })
 
 Groupboxes.Exploits_BypassRight:AddDivider()
