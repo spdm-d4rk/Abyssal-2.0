@@ -941,49 +941,6 @@ Connections.FlingConnection = Services.RunService.Heartbeat:Connect(function()
     end
 end)
 
-		local TrollingTab = Tabs.Main:AddLeftGroupbox('Trolling')
-
-		TrollingTab:AddToggle('FlingParts', {
-			Text = "Fling Elevator Doors [FE]",
-			Tooltip = 'Flings all on-anchored parts around, can be seen by other players.',
-            Disabled = not ExecutorSupport["isnetworkowner"],
-			DisabledTooltip = "Your executor doesn't support this feature."
-		})
-
-		local BreakDoorConnection = RunService.Heartbeat:Connect(function()
-	if not ExecutorSupport["isnetworkowner"] or not Toggles.FlingParts then
-		return
-	end
-
-	for i,Door in pairs(UnanchoredParts) do
-		if Toggles.FlingParts.Value then
-			if ExecutorSupport["isnetworkowner"] then
-				if isnetworkowner(Door) then
-					if not Door:FindFirstChild("DoorBreakVelocity") then
-						local DoorBreakVelocity = Instance.new("BodyPosition")
-						DoorBreakVelocity.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
-						DoorBreakVelocity.Parent = Door
-						DoorBreakVelocity.Name = "DoorBreakVelocity"
-					else
-						Door:FindFirstChild("DoorBreakVelocity").Position = Vector3.new(math.random(-150,150),math.random(-150,150),math.random(-150,150))
-					end
-				else
-					if Door:FindFirstChild("DoorBreakVelocity") then
-						Door:FindFirstChild("DoorBreakVelocity"):Destroy()
-					end
-
-				end
-			end
-		else
-			if Door:FindFirstChild("DoorBreakVelocity") then
-				Door:FindFirstChild("DoorBreakVelocity"):Destroy()
-			end
-
-		end
-	end
-end)
-
-
 Connections.MainConnection = Services.RunService.Heartbeat:Connect(function()
     -- Elevator Sniper / Auto Join
     if tick() - Globals.LastElevatorCheck > 0.25 then
