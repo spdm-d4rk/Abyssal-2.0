@@ -1005,7 +1005,7 @@ end
 
 local Window = Library:CreateWindow({
         Title = "Abysall Hub",
-        Footer = "Abysall Hub - discord.gg/5jwbZcqjVF",
+        Footer = "dsc.gg/abysallhub",
         NotifySide = "Right",
         ShowCustomCursor = false,
         AutoShow = true,
@@ -1053,6 +1053,12 @@ Groupboxes.General_Character:AddToggle("RemoveAcceleration", {
 })
 
 local CustomPhysics
+
+Options.SpeedBoostSlider:OnChanged(function(Value)
+        if RemotesFolder:FindFirstChild("Crouch") then
+                RemotesFolder.Crouch:FireServer(Value and true or Functions.IsCrouching(), true)
+        end
+end)
 
 Toggles.NoclipToggle:AddKeyPicker("NoclipKeybind", {
         Text = "Noclip", Default = "N", Mode = "Toggle", SyncToggleState = true
@@ -1406,30 +1412,6 @@ Groupboxes.Exploits_BypassRight:AddDropdown("InfiniteItemsList", {
         Disabled = not Functions.CheckCompatability({"fireproximityprompt"}),
         DisabledTooltip = Globals.IncompatibleMessage
 })
-Groupboxes.Exploits_BypassRight:AddButton({
-        Text = "Bring Drops (FE)",
-        Tooltip = "Bring all the dropped items to your current pos.",
-        Func = function()
-                local player = Services.Players.LocalPlayer
-                local char = player.Character or player.CharacterAdded:Wait()
-                local hrp = char:WaitForChild("HumanoidRootPart")
-                local drops = Services.Workspace:FindFirstChild("Drops")
-                if drops then
-                        for _, drop in pairs(drops:GetChildren()) do
-                                if drop:IsA("BasePart") then
-                                        drop.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
-                                elseif drop:IsA("Model") then
-                                        local main = drop.PrimaryPart or drop:FindFirstChildWhichIsA("BasePart")
-                                        if main then
-                                                drop:SetPrimaryPartCFrame(hrp.CFrame + Vector3.new(0, 3, 0))
-                                        end
-                                end
-                        end
-                else
-                        Functions.Notify({ Title = "Bring Drops", Body = "Drops folder not found." })
-                end
-        end
-})
 
 Groupboxes.Exploits_BypassRight:AddDivider()
 Groupboxes.Exploits_BypassRight:AddToggle("PositionSpoof", {
@@ -1444,7 +1426,7 @@ Toggles.PositionSpoof:OnChanged(function(Value)
                 if Value then
                         RootPart.CFrame = RootPart.CFrame * CFrame.new(0, -2.346, 0)
                         Humanoid.HipHeight = 0.05
-                        RemotesFolder.Crouch:FireServer(true)
+                        RemotesFolder.Crouch:FireServer(true, true)
                 else
                         RootPart.CFrame = RootPart.CFrame * CFrame.new(0, 2.346, 0)
                         Humanoid.HipHeight = 2.396
@@ -1456,7 +1438,7 @@ Toggles.PositionSpoof:AddKeyPicker("PositionSpoof", {
 })
 Toggles.CrouchSpoof:OnChanged(function(Value)
         if RemotesFolder:FindFirstChild("Crouch") then
-                RemotesFolder.Crouch:FireServer(Value and true or Functions.IsCrouching())
+                RemotesFolder.Crouch:FireServer(Value and true or Functions.IsCrouching(), true)
         end
 end)
 
@@ -2037,11 +2019,11 @@ Groupboxes.Floors_Automation:AddToggle("AutoSteerMinecart", {
         Disabled = not Functions.CheckCompatability({"require"}), DisabledTooltip = Globals.IncompatibleMessage
 })
 Groupboxes.Floors_Automation:AddSlider("AutoSteerMinecartTurnDistance", {
-        Text = "Turn Distance", Min = 20, Max = 50, Default = 35, Rounding = 0,
+        Text = "Turn Distance", Min = 20, Max = 40, Default = 30, Rounding = 0,
         Disabled = not Functions.CheckCompatability({"require"}), DisabledTooltip = Globals.IncompatibleMessage
 })
 Groupboxes.Floors_Automation:AddSlider("AutoSteerMinecartDuckDistance", {
-        Text = "Crouch Distance", Min = 20, Max = 50, Default = 35, Rounding = 0,
+        Text = "Crouch Distance", Min = 20, Max = 40, Default = 30, Rounding = 0,
         Disabled = not Functions.CheckCompatability({"require"}), DisabledTooltip = Globals.IncompatibleMessage
 })
 Groupboxes.Floors_Automation:AddDivider()
@@ -2327,11 +2309,6 @@ Groupboxes.Floors_Completion:AddButton({
         end
 
         local function HandlePump(Pump)
-            local Completed = false
-            Pump:WaitForChild("Wheel").Sound.Played:Once(function()
-                            Completed = true
-                                Pump:SetAttribute("Abysall_Completed", true)
-                    end)
 
             while task.wait(0.1) do
                                 if IsCutscene then
@@ -2345,7 +2322,7 @@ Groupboxes.Floors_Completion:AddButton({
                     Functions.ForceFirePrompt(Prompt)
                 end
 
-                if Completed then
+                if Pump:GetAttribute("Abysall_Completed") then
                     break
                 end
             end
@@ -2505,12 +2482,15 @@ if Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallme
                 if Abysall and Abysall.Environment then
                         local Method = Abysall.Environment.getnamecallmethod()
 
-                        if Self.Name == "Crouch" and Method == "FireServer" and (Toggles.CrouchSpoof.Value or Toggles.PositionSpoof.Value) then
-                                Args[1] = true
+                        if Self.Name == "Crouch" and Method == "FireServer" then
+                                if Toggles.CrouchSpoof.Value or Toggles.PositionSpoof.Value then
+                                        Args[1] = true
+                                end
+                                Args[2] = true
                         end
 
-                        if Self.Name == "ClutchHeartbeat" and Method == "FireServer" and Toggles.AutoHeartbeatMinigame.Value then
-                                Args[2] = true
+                        if Self.Name == "ClutchHeartbeat" and Method == "FireServer" and Toggles.AutoHeartbeatMinigame.Value or Self.Name == "HideMonster" and Method == "FireServer" and Toggles.AutoHeartbeatMinigame.Value then
+                                return
                         end
 
                         if Self.Name == "MotorReplication" and Method == "FireServer" then
@@ -2631,8 +2611,8 @@ Functions.HandleCharacter = function(NewCharacter)
                 local OriginalGetMoveVector = Controls.GetMoveVector
                 Controls.GetMoveVector = function(...)
                         if Toggles.AutoSteerMinecart.Value and Floor == "Mines" then
-                                local Node = Functions.GetNearestTurnNode()
-                                if Node then
+                                local Node = Globals.NearestTurnNode
+                                if Node and Functions.GetMinecart() then
                                         local Turn = Node:GetAttribute("Turn")
                                         return Turn == "Left" and Vector3.new(-1, 0, 0) or Turn == "Right" and Vector3.new(1, 0, 0) or Vector3.zero
                                 end
@@ -2642,8 +2622,11 @@ Functions.HandleCharacter = function(NewCharacter)
         end
 
         Globals.AutoMinecartDucked = false
+        Globals.LastDuck = tick()
         Connections.AutoSteerMinecartDuckHandler = Services.RunService.Heartbeat:Connect(function()
-                if not Toggles.AutoSteerMinecart.Value or not Functions.GetMinecart() then return end
+                if not Toggles.AutoSteerMinecart.Value or not Functions.GetMinecart() or tick() - Globals.LastDuck < 0.1 then return end
+                Globals.NearestTurnNode = Functions.GetNearestTurnNode()
+
                 if not Globals.AutoMinecartDucked and Functions.GetNearestDuckBoard() then
                         Main_Game.crouch(true)
                         Globals.AutoMinecartDucked = true
@@ -2656,6 +2639,7 @@ Functions.HandleCharacter = function(NewCharacter)
                 else
                         Camera.FieldOfView = Options.FieldOfView.Value
                 end
+                Globals.LastDuck = tick()
         end)
 
         Globals.AnticheatDisabled = false
@@ -2858,7 +2842,7 @@ Functions.HandleCharacter = function(NewCharacter)
         Globals.SpoofOffset = 0
         Globals.LastAutoHide = tick()
         Connections.AutoHideConnection = Services.RunService.Heartbeat:Connect(function()
-                if not Toggles.AutoClosetToggle.Value or tick() - Globals.LastAutoHide <= 0.05 then
+                if not Toggles.AutoClosetToggle.Value or tick() - Globals.LastAutoHide <= 0.1 then
                         Globals.AutoClosetActive = false
                         return
                 end
@@ -2969,7 +2953,7 @@ Functions.HandleCharacter = function(NewCharacter)
 
                 if not MainHook then
                         if (Toggles.CrouchSpoof.Value or Toggles.PositionSpoof.Value) and RemotesFolder:FindFirstChild("Crouch") then
-                                RemotesFolder.Crouch:FireServer(true)
+                                RemotesFolder.Crouch:FireServer(true, true)
                         end
                 end
 
@@ -3057,7 +3041,7 @@ Functions.HandleCharacter = function(NewCharacter)
                         end
                 end
 
-                if RemotesFolder:FindFirstChild("Crouch") then
+                if RemotesFolder:FindFirstChild("Crouch") and not Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallmethod"}) then
                         local IsCrouch = Functions.IsCrouching()
                         if Toggles.CrouchSpoof.Value or Toggles.PositionSpoof.Value then IsCrouch = true end
                         RemotesFolder.Crouch:FireServer(IsCrouch, true)
@@ -3147,7 +3131,7 @@ Functions.HandleCharacter = function(NewCharacter)
         if Toggles.PositionSpoof.Value and Floor ~= "Fools" and Floor ~= "OldHotel" then
                 RootPart.CFrame = RootPart.CFrame * CFrame.new(0, -2.346, 0)
                 Humanoid.HipHeight = 0.05
-                RemotesFolder.Crouch:FireServer(true)
+                RemotesFolder.Crouch:FireServer(true, true)
         end
 
         local Jam = Globals.MainUI.Initiator.Main_Game.Health:FindFirstChild("Jam")
@@ -3186,37 +3170,12 @@ Functions.HandleHidingTransparency = function(Model)
         end
 end
 
-local AllowedInstances = {
-        Lava=true, GoldPile=true, KeyObtain=true, KeyObtainFake=true, Drakobloxxer=true, FuseObtain=true,
-        MinesGenerator=true, JeffTheKiller=true, Snare=true, FakeDoor=true, DoorFake=true, SideroomSpace=true,
-        ChestBox=true, ChestBoxLocked=true, Chest_Vine=true, Locker_Small_Locked=true, Toolbox=true,
-        Toolbox_Locked=true, Wardrobe=true, ["Wardrobe-FOOLS26"]=true, Toolshed=true, Toolshed_Small=true,
-        Bed=true, MinesAnchor=true, Double_Bed=true, RetroWardrobe=true, Backdoor_Wardrobe=true,
-        Rooms_Locker=true, Rooms_Locker_Fridge=true, Locker_Large=true, FigureRig=true, FigureRagdoll=true,
-        TimerLever=true, Lever=true, Seek_Arm=true, ChandelierObstruction=true, ScaryWall=true, Ladder=true,
-        CircularVent=true, Dumpster=true, SquareGrate=true, TriggerEventCollision=true, GrumbleRig=true,
-        GiggleCeiling=true, MinesGateButton=true, ElectricalKeyObtain=true, LibraryHintPaper=true,
-        WaterPump=true, CringlePresent=true, Wheel=true, PickupItem=true, LiveHintBook=true,
-        LiveBreakerPolePickup=true, LeverForGate=true, GloomPile=true, SeekFloodline=true, Door=true,
-        Green_Herb=true, Bridge=true, MouseHole=true, BananaPeel=true, NannerPeel=true, PowerupPad=true,
-        IndustrialGate=true, CollisionFloor=true, ElevatorCar=true, Wax_Door=true, ThingToOpen=true,
-        MovingDoor=true, StardustPickup=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
-        GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
-        RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
-        Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true
-}
-
 Functions.HandleObject = function(Object)
-        if not AllowedInstances[Object.Name] and Object.ClassName ~= "ProximityPrompt" and Object.Parent ~= CurrentRooms and not ItemNames[Object.Name] then
-                return
-        end
-
         for _, Room in CurrentRooms:GetChildren() do
                 if Object:IsDescendantOf(Room) then
                         Object:SetAttribute("ParentRoom", tonumber(Room.Name))
                         break
                 end
-        task.wait()
         end
 
         if Object.Parent == CurrentRooms then
@@ -3230,34 +3189,42 @@ Functions.HandleObject = function(Object)
         local Name = Object.Name
 
         if Name == "KeyObtain" then
-                task.wait(0.5)
-                if Object.Parent then
-                        if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Door Key", Color = Options.ObjectiveESPColor.Value }, true) end
-                        table.insert(Objects.Objectives, Object)
-                end
+                task.spawn(function()
+                        task.wait(0.5)
+                        if Object.Parent then
+                                if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Door Key", Color = Options.ObjectiveESPColor.Value }, true) end
+                                table.insert(Objects.Objectives, Object)
+                        end
+                end)
         elseif Name == "ElectricalKeyObtain" then
-                task.wait(0.5)
-                if Object.Parent then
-                        if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Electrical Key", Color = Options.ObjectiveESPColor.Value }, true) end
-                        table.insert(Objects.Objectives, Object)
-                end
+                task.spawn(function()
+                        task.wait(0.5)
+                        if Object.Parent then
+                                if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Electrical Key", Color = Options.ObjectiveESPColor.Value }, true) end
+                                table.insert(Objects.Objectives, Object)
+                        end
+                end)
         elseif Name == "KeyObtainFake" then
-                task.wait(0.5)
-                if Object.Parent then
-                        if Toggles.EntityESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Fake Key", Color = Options.EntityESPColor.Value }, true) end
-                        table.insert(Objects.Entities, Object)
-                end
+                task.spawn(function()
+                        task.wait(0.5)
+                        if Object.Parent then
+                                if Toggles.EntityESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Fake Key", Color = Options.EntityESPColor.Value }, true) end
+                                table.insert(Objects.Entities, Object)
+                        end
+                end)
         elseif Name == "TimerLever" then
-                task.wait(0.5)
-                if Object.Parent then
-                        Object:SetAttribute("AddTime", Object.TakeTimer.TextLabel.Text == "01:00" and 60 or 30)
-                        if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Time Lever [+" .. Object:GetAttribute("AddTime") .. "s]", Color = Options.ObjectiveESPColor.Value }, true) end
-                        Object:WaitForChild("Main").SoundToPlay.Played:Once(function()
-                                Functions.RemoveESP(Object)
-                                Functions.BlacklistESP(Object)
-                        end)
-                        table.insert(Objects.Objectives, Object)
-                end
+                task.spawn(function()
+                        task.wait(0.5)
+                        if Object.Parent then
+                                Object:SetAttribute("AddTime", Object.TakeTimer.TextLabel.Text == "01:00" and 60 or 30)
+                                if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Time Lever [+" .. Object:GetAttribute("AddTime") .. "s]", Color = Options.ObjectiveESPColor.Value }, true) end
+                                Object:WaitForChild("Main").SoundToPlay.Played:Once(function()
+                                        Functions.RemoveESP(Object)
+                                        Functions.BlacklistESP(Object)
+                                end)
+                                table.insert(Objects.Objectives, Object)
+                        end
+                end)
         elseif Name == "LiveHintBook" then
                 if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Hint Book", Color = Options.ObjectiveESPColor.Value }, true) end
                 table.insert(Objects.Objectives, Object)
@@ -3282,6 +3249,8 @@ Functions.HandleObject = function(Object)
         elseif Name == "WaterPump" then
                 if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object:WaitForChild("Wheel"), Text = "Water Pump", Color = Options.ObjectiveESPColor.Value }, true) end
                 Object:WaitForChild("Wheel").Sound.Played:Once(function()
+                        Object:SetAttribute("Abysall_Completed", true)
+
                         Functions.RemoveESP(Object.Wheel)
                         Functions.BlacklistESP(Object.Wheel)
                 end)
@@ -3308,15 +3277,17 @@ Functions.HandleObject = function(Object)
                 if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object.Hole, Text = "Mandrake Hole", Color = Options.EntityESPColor.Value }, true) end
                 table.insert(Objects.Entities, Object.Hole)
         elseif Name == "MinesGenerator" then
-                task.wait(0.75)
-                if Object.Parent then
-                        if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Generator", Color = Options.ObjectiveESPColor.Value }, true) end
-                        Object:WaitForChild("Lever").Sound.Played:Once(function()
-                                Functions.RemoveESP(Object)
-                                Functions.BlacklistESP(Object)
-                        end)
-                        table.insert(Objects.Objectives, Object)
-                end
+                task.spawn(function()
+                        task.wait(0.75)
+                        if Object.Parent then
+                                if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Generator", Color = Options.ObjectiveESPColor.Value }, true) end
+                                Object:WaitForChild("Lever").Sound.Played:Once(function()
+                                        Functions.RemoveESP(Object)
+                                        Functions.BlacklistESP(Object)
+                                end)
+                                table.insert(Objects.Objectives, Object)
+                        end
+                end)
         elseif Name == "FuseObtain" then
                 if Toggles.ObjectiveESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Generator Fuse", Color = Options.ObjectiveESPColor.Value }, true) end
                 Object:WaitForChild("Hitbox").FuseModel:GetPropertyChangedSignal("LocalTransparencyModifier"):Once(function()
@@ -3389,8 +3360,8 @@ Functions.HandleObject = function(Object)
                 local LastDoorFire = tick()
                 local DoorConn = Services.RunService.Heartbeat:Connect(function()
                         if Object:FindFirstChild("Door") and Object:FindFirstChild("ClientOpen") then
-                                if LocalPlayer:DistanceFromCharacter(Object.Door.Position) < 150
-                                        and tick() - LastDoorFire > 0.05
+                                if LocalPlayer:DistanceFromCharacter(Object.Door.Position) < 75
+                                        and tick() - LastDoorFire > 0.1
                                         and Toggles.DoorReachToggle.Value
                                 then
                                         Object.ClientOpen:FireServer()
@@ -3589,24 +3560,6 @@ Functions.HandleObject = function(Object)
                 if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
                 table.insert(Objects.Chests, Object)
         elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
-                local Nearest = {
-                        Room = nil,
-                        Distance = math.huge
-                }
-                for _, Player in pairs(Services.Players:GetPlayers()) do
-                        if Player.Character then
-                                local Distance = (Player.Character:GetPivot().Position - Object:GetPivot().Position).Magnitude
-                                if Distance < Nearest.Distance then
-                                        Nearest.Room = tonumber(Player:GetAttribute("CurrentRoom"))
-                                        Nearest.Distance = Distance
-                                end
-                        end
-                end
-
-                if Nearest.Room and not Object:GetAttribute("ParentRoom") then
-                        Object:SetAttribute("ParentRoom", (Nearest.Distance > 10 and Floor == "Party" and tonumber(Nearest.Room) + 1) or tonumber(Nearest.Room))
-                end
-
                 if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
                 if Name == "LotusHolder" or Name == "LotusPetalPickup" then
                         Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3933,12 +3886,53 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
         end
 end)
 
+Globals.ObjectQueue = {}
+local AllowedInstances = {
+        Lava=true, GoldPile=true, KeyObtain=true, KeyObtainFake=true, Drakobloxxer=true, FuseObtain=true,
+        MinesGenerator=true, JeffTheKiller=true, Snare=true, FakeDoor=true, DoorFake=true, SideroomSpace=true,
+        ChestBox=true, ChestBoxLocked=true, Chest_Vine=true, Locker_Small_Locked=true, Toolbox=true,
+        Toolbox_Locked=true, Wardrobe=true, ["Wardrobe-FOOLS26"]=true, Toolshed=true, Toolshed_Small=true,
+        Bed=true, MinesAnchor=true, Double_Bed=true, RetroWardrobe=true, Backdoor_Wardrobe=true,
+        Rooms_Locker=true, Rooms_Locker_Fridge=true, Locker_Large=true, FigureRig=true, FigureRagdoll=true,
+        TimerLever=true, Lever=true, Seek_Arm=true, ChandelierObstruction=true, ScaryWall=true, Ladder=true,
+        CircularVent=true, Dumpster=true, SquareGrate=true, TriggerEventCollision=true, GrumbleRig=true,
+        GiggleCeiling=true, MinesGateButton=true, ElectricalKeyObtain=true, LibraryHintPaper=true,
+        WaterPump=true, CringlePresent=true, Wheel=true, PickupItem=true, LiveHintBook=true,
+        LiveBreakerPolePickup=true, LeverForGate=true, GloomPile=true, SeekFloodline=true, Door=true,
+        Green_Herb=true, Bridge=true, MouseHole=true, BananaPeel=true, NannerPeel=true, PowerupPad=true,
+        IndustrialGate=true, CollisionFloor=true, ElevatorCar=true, Wax_Door=true, ThingToOpen=true,
+        MovingDoor=true, StardustPickup=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
+        GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
+        RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
+        Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true
+}
+
+Functions.QueueObject = function(Object)
+        if not AllowedInstances[Object.Name] and Object.ClassName ~= "ProximityPrompt" and Object.Parent ~= CurrentRooms and not ItemNames[Object.Name] then
+                return
+        end
+        table.insert(Globals.ObjectQueue, Object)
+end
+
+Globals.QueueDone = true
+Connections.QueueConnection = Services.RunService.RenderStepped:Connect(function()
+        if not Globals.QueueDone then
+                return
+        end
+        local Object = table.remove(Globals.ObjectQueue, 1)
+        if Object then
+                Globals.QueueDone = false
+                Functions.HandleObject(Object)
+                Globals.QueueDone = true
+        end
+end)
+
 for _, Object in Services.Workspace:GetDescendants() do
-        task.spawn(function() Functions.HandleObject(Object) end)
+        task.spawn(function() Functions.QueueObject(Object) end)
 end
 
 Connections.InstanceHandler = Services.Workspace.DescendantAdded:Connect(function(Object)
-        Functions.HandleObject(Object)
+        Functions.QueueObject(Object)
 end)
 
 for _, Player in Services.Players:GetPlayers() do
@@ -4173,7 +4167,7 @@ Connections.AutoInteract = Services.RunService.Heartbeat:Connect(function()
                         else
                                 Distance = LocalPlayer:DistanceFromCharacter(Prompt.Parent:GetPivot().Position)
                         end
-                        if Distance <= Prompt.MaxActivationDistance and Prompt.Enabled or Distance <= Prompt.MaxActivationDistance and Prompt.Name == "LongPushPrompt" then
+                        if Distance <= Prompt.MaxActivationDistance and Prompt.Enabled or Distance <= Prompt.MaxActivationDistance and Prompt.Name == "LongPushPrompt" or Distance <= Prompt.MaxActivationDistance and Prompt.Name == "BigPropPrompt" then
                                 task.spawn(Functions.TriggerPrompt, Prompt)
                         end
                 end
@@ -4292,7 +4286,7 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
         end
         task.wait(0.1)
 
-        if LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position) >= 10000 then return end
+        if not Entity.PrimaryPart or LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position) >= 10000 then return end
 
         local Alias = EntityData.Alias
         if Options.EntityList.Value[Alias] and Toggles.NotifyEntities.Value then
