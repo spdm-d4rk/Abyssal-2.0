@@ -1823,7 +1823,7 @@ Groupboxes.Visuals_ESP_Toggles:AddToggle("LadderESPToggle",     { Text = "Ladder
 Groupboxes.Visuals_ESP_Toggles:AddDivider()
 Groupboxes.Visuals_ESP_Toggles:AddDropdown("EntityESPOptions",     { 
 	Text = "Entity List",
-	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==" },
+	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==","Vacuum","Snare" },
 	Multi = true,
 	AllowNull = true
 })
@@ -1853,7 +1853,7 @@ local EntityESPLabels = {
 	Snare = "Snare", GrumbleRig = "Grumble",
 	Drakobloxxer = "Drakobloxxer", Hole = "Mandrake Hole", Groundskeeper = "Groundskeeper",
 	LiveEntityBramble = "Bramble", Figure = "Figure", FigureRig = "Figure", FigureRagdoll = "Figure",
-	FakeDoor = "Dupe", DoorFake = "Dupe"
+	FakeDoor = "Dupe", DoorFake = "Dupe", SideroomSpace = "Vacuum"
 }
 
 local NodeEntities = {
@@ -3711,6 +3711,7 @@ Functions.HandleObject = function(Object)
 			Object:WaitForChild("Collision").CanCollide = true
 			Object:WaitForChild("Collision").CanTouch = false
 		end
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Vacuum"] then Functions.AddESP({ Object = Object, Text = "Vacuum", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
 	elseif Name == "Snare" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Snare"] then Functions.AddESP({ Object = Object, Text = "Snare", Color = Options.EntityESPColor.Value }, true) end
